@@ -219,7 +219,7 @@ ifeq ($(ENABLE_UART),1)
 endif
 
 # Main
-OBJS += app/action.o app/qrcodegen.o
+OBJS += app/action.o app/miniqr.o
 ifeq ($(ENABLE_AIRCOPY),1)
 	OBJS += app/aircopy.o
 endif

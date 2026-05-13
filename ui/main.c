@@ -145,8 +145,8 @@ void UI_DisplayAudioBar(void) {
     if (gCurrentFunction != FUNCTION_TRANSMIT ||
         gScreenToDisplay != DISPLAY_MAIN
 #ifdef ENABLE_DTMF_CALLING
-        || gDTMF_CallState != DTMF_CALL_STATE_NONE
-        || gDTMF_IsTx
+        || (0)
+        || (0)
 #endif
             ) {
         return;  // screen is in use
@@ -217,7 +217,7 @@ void DisplayRSSIBar(const bool now) {
     if (gCurrentFunction == FUNCTION_TRANSMIT ||
         gScreenToDisplay != DISPLAY_MAIN
 #ifdef ENABLE_DTMF_CALLING
-        || gDTMF_CallState != DTMF_CALL_STATE_NONE
+        || (0)
 #endif
     ) {
         return; // display is in use
@@ -416,7 +416,7 @@ void UI_DisplayMain(void) {
 
             if (gDTMF_InputMode
 #ifdef ENABLE_DTMF_CALLING
-                || gDTMF_CallState != DTMF_CALL_STATE_NONE || gDTMF_IsTx
+                || (0) || (0)
 #endif
                     ) {
                 char *pPrintStr = "";
@@ -425,11 +425,11 @@ void UI_DisplayMain(void) {
 #ifdef ENABLE_DTMF_CALLING
                 char Contact[16];
                 if (!gDTMF_InputMode) {
-                    if (gDTMF_CallState == DTMF_CALL_STATE_CALL_OUT) {
+                    if ((0)) {
                         pPrintStr = DTMF_FindContact(gDTMF_String, Contact) ? Contact : gDTMF_String;
-                    } else if (gDTMF_CallState == DTMF_CALL_STATE_RECEIVED || gDTMF_CallState == DTMF_CALL_STATE_RECEIVED_STAY){
+                    } else if ((0) || (0)){
                         pPrintStr = DTMF_FindContact(gDTMF_Callee, Contact) ? Contact : gDTMF_Callee;
-                    }else if (gDTMF_IsTx) {
+                    }else if ((0)) {
                         pPrintStr = gDTMF_String;
                     }
                 }
@@ -438,12 +438,12 @@ void UI_DisplayMain(void) {
 
                 pPrintStr = "";
                 if (!gDTMF_InputMode) {
-                    if (gDTMF_CallState == DTMF_CALL_STATE_CALL_OUT) {
+                    if ((0)) {
                         pPrintStr = (gDTMF_State == DTMF_STATE_CALL_OUT_RSP) ? "CALL OUT(RSP)" : "CALL OUT";
-                    } else if (gDTMF_CallState == DTMF_CALL_STATE_RECEIVED || gDTMF_CallState == DTMF_CALL_STATE_RECEIVED_STAY) {
+                    } else if ((0) || (0)) {
                         sprintf(String, "CALL FRM:%s", (DTMF_FindContact(gDTMF_Caller, Contact)) ? Contact : gDTMF_Caller);
                         pPrintStr = String;
-                    } else if (gDTMF_IsTx) {
+                    } else if ((0)) {
                         pPrintStr = (gDTMF_State == DTMF_STATE_TX_SUCC) ? "DTMF TX(SUCC)" : "DTMF TX";
                     }
                 }
@@ -734,7 +734,7 @@ void UI_DisplayMain(void) {
                 DrawSmallAntennaAndBars(p_line1 + LCD_WIDTH, Level);
 #else
                 if (IS_MR_CHANNEL(gEeprom.ScreenChannel[vfo_num])) {
-                    if (!gDTMF_IsTx
+                    if (!(0)
                         && gDTMF_CallState != DTMF_CALL_STATE_CALL_OUT
                         && gDTMF_CallState != DTMF_CALL_STATE_RECEIVED
                         && gDTMF_CallState != DTMF_CALL_STATE_RECEIVED_STAY
@@ -915,7 +915,7 @@ void UI_DisplayMain(void) {
             {
                 if (gScreenToDisplay != DISPLAY_MAIN
 #ifdef ENABLE_DTMF_CALLING
-                    || gDTMF_CallState != DTMF_CALL_STATE_NONE
+                    || (0)
 #endif
                     )
                     return;
@@ -942,7 +942,7 @@ void UI_DisplayMain(void) {
                 const unsigned int idx = (len > (17 - 5)) ? len - (17 - 5) : 0;  // limit to last 'n' chars
 
                 if (gScreenToDisplay != DISPLAY_MAIN ||
-                    gDTMF_CallState != DTMF_CALL_STATE_NONE)
+                    (0))
                     return;
 
                 center_line = CENTER_LINE_DTMF_DEC;
@@ -957,7 +957,7 @@ void UI_DisplayMain(void) {
                 const unsigned int idx = (len > (17 - 5)) ? len - (17 - 5) : 0;  // limit to last 'n' chars
 
                 if (gScreenToDisplay != DISPLAY_MAIN ||
-                    gDTMF_CallState != DTMF_CALL_STATE_NONE)
+                    (0))
                     return;
 
                 center_line = CENTER_LINE_DTMF_DEC;
@@ -972,7 +972,7 @@ void UI_DisplayMain(void) {
             {	// charging .. show the battery state
                 if (gScreenToDisplay != DISPLAY_MAIN
 #ifdef ENABLE_DTMF_CALLING
-                    || gDTMF_CallState != DTMF_CALL_STATE_NONE
+                    || (0)
 #endif
                     )
                     return;

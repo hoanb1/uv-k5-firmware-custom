@@ -5,7 +5,7 @@
 
 #include "radiosonde.h"
 #include "rs41.h"
-#include "qrcodegen.h"
+extern void miniqr_encode(const char *text, uint8_t qrcode[25][25]);
 
 #include <string.h>
 #include <stdio.h>
@@ -148,39 +148,36 @@ static void Sonde_DrawQRCode(const RS41_Data_t *d) {
             (long)lat_deg, (long)(lat_frac / 100), 
             (long)lon_deg, (long)(lon_frac / 100));
 
-    uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
-    uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+    uint8_t qrcode[25][25];
+    extern void miniqr_encode(const char *text, uint8_t qrcode[25][25]);
+    miniqr_encode(url, qrcode);
 
-    bool ok = qrcodegen_encodeText(url, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
-        qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+    int size = 25;
+    int scale = 2; // 25x25 scaled by 2 is 50x50, perfectly fits 64x64 screen
+    
+    // Center the QR code
+    int offset_x = (128 - size * scale) / 2;
+    int offset_y = (64 - size * scale) / 2;
 
-    if (ok) {
-        int size = qrcodegen_getSize(qrcode);
-        int scale = (size * 2 <= 60) ? 2 : 1; // 2x scale if fits, with some margin
-        
-        // Center the QR code
-        int offset_x = (128 - size * scale) / 2;
-        int offset_y = (64 - size * scale) / 2;
-
-        // Draw white background
-        for (int y = 0; y < 64; y++) {
-            for (int x = 0; x < 128; x++) {
-                Sonde_DrawPixel(x, y, false);
-            }
+    // Draw white background
+    for (int y = 0; y < 64; y++) {
+        for (int x = 0; x < 128; x++) {
+            Sonde_DrawPixel(x, y, false);
         }
+    }
 
-        // Draw QR
-        for (int y = 0; y < size; y++) {
-            for (int x = 0; x < size; x++) {
-                bool isDark = qrcodegen_getModule(qrcode, x, y);
-                for (int dy = 0; dy < scale; dy++) {
-                    for (int dx = 0; dx < scale; dx++) {
-                        Sonde_DrawPixel(offset_x + x * scale + dx, offset_y + y * scale + dy, isDark);
-                    }
+    // Draw QR
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            bool isDark = qrcode[y][x];
+            for (int dy = 0; dy < scale; dy++) {
+                for (int dx = 0; dx < scale; dx++) {
+                    Sonde_DrawPixel(offset_x + x * scale + dx, offset_y + y * scale + dy, isDark);
                 }
             }
         }
     }
+
 }
 
 static void Sonde_Render(void)
