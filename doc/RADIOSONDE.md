@@ -9,8 +9,6 @@ To successfully decode the RS41's 4800 baud GFSK telemetry, the MCU needs access
 **Required Mod:**
 You must connect **Pin 6 (EARO)** of the BK4819 to **PA8** of the DP32G030 MCU via a **DC-blocking capacitor** (e.g., 100nF). This bypasses the internal audio filters and provides a clean waveform to the MCU's ADC for processing.
 
-> **Note:** Previously, Pin 28 (GPIO0) was tested, but using Pin 6 allows the `RX_ENABLE` circuit and LNA to function normally, significantly improving reception range.
-
 ![Audio Connection Hardware Mod](../images/audio-connection.jpg)
 
 ## Software Features
