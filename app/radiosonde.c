@@ -120,13 +120,22 @@ static void Sonde_DrawData(const RS41_Data_t *d)
     UI_PrintStringSmall(str, 0, 127, 7);
 }
 
+static void Sonde_DrawPixel(int x, int y, bool black) {
+    if (x < 0 || x >= 128 || y < 0 || y >= 64) return;
+    if (black) {
+        gFrameBuffer[y / 8][x] |= (1 << (y % 8));
+    } else {
+        gFrameBuffer[y / 8][x] &= ~(1 << (y % 8));
+    }
+}
+
 static void Sonde_DrawQRCode(const RS41_Data_t *d) {
     if (!d->valid) {
         UI_PrintStringSmall("NO GPS DATA", 0, 127, 3);
         return;
     }
 
-    char str[32];
+    char url[64];
     int32_t lat_deg = d->lat_1e6 / 1000000;
     int32_t lat_frac = d->lat_1e6 % 1000000;
     if (lat_frac < 0) lat_frac = -lat_frac;
@@ -134,18 +143,44 @@ static void Sonde_DrawQRCode(const RS41_Data_t *d) {
     int32_t lon_frac = d->lon_1e6 % 1000000;
     if (lon_frac < 0) lon_frac = -lon_frac;
 
-    UI_PrintStringSmall("ROM TOO SMALL FOR QR", 0, 127, 1);
-    UI_PrintStringSmall("SCAN TEXT WITH LENS:", 0, 127, 2);
+    // geo:lat,lon
+    sprintf(url, "geo:%ld.%04ld,%ld.%04ld", 
+            (long)lat_deg, (long)(lat_frac / 100), 
+            (long)lon_deg, (long)(lon_frac / 100));
 
-    sprintf(str, "Lat: %ld.%04ld", (long)lat_deg, (long)(lat_frac / 100));
-    UI_PrintStringSmall(str, 0, 127, 4);
+    uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
+    uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
 
-    sprintf(str, "Lon: %ld.%04ld", (long)lon_deg, (long)(lon_frac / 100));
-    UI_PrintStringSmall(str, 0, 127, 5);
+    bool ok = qrcodegen_encodeText(url, tempBuffer, qrcode, qrcodegen_Ecc_LOW,
+        qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
 
-    int32_t alt_m = d->alt_cm / 100;
-    sprintf(str, "Alt: %ld m", (long)alt_m);
-    UI_PrintStringSmall(str, 0, 127, 6);
+    if (ok) {
+        int size = qrcodegen_getSize(qrcode);
+        int scale = (size * 2 <= 60) ? 2 : 1; // 2x scale if fits, with some margin
+        
+        // Center the QR code
+        int offset_x = (128 - size * scale) / 2;
+        int offset_y = (64 - size * scale) / 2;
+
+        // Draw white background
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 128; x++) {
+                Sonde_DrawPixel(x, y, false);
+            }
+        }
+
+        // Draw QR
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                bool isDark = qrcodegen_getModule(qrcode, x, y);
+                for (int dy = 0; dy < scale; dy++) {
+                    for (int dx = 0; dx < scale; dx++) {
+                        Sonde_DrawPixel(offset_x + x * scale + dx, offset_y + y * scale + dy, isDark);
+                    }
+                }
+            }
+        }
+    }
 }
 
 static void Sonde_Render(void)

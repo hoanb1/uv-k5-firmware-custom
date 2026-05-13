@@ -112,6 +112,11 @@ endif
 ifeq ($(ENABLE_FMRADIO),1)
 	ENABLE_4732=0
 endif
+ifeq ($(ENABLE_RS41),1)
+	ENABLE_MDC1200=0
+	ENABLE_DTMF_CALLING=0
+	ENABLE_UART=0
+endif
 
 
 CFLAGS =
@@ -214,7 +219,7 @@ ifeq ($(ENABLE_UART),1)
 endif
 
 # Main
-OBJS += app/action.o
+OBJS += app/action.o app/qrcodegen.o
 ifeq ($(ENABLE_AIRCOPY),1)
 	OBJS += app/aircopy.o
 endif
@@ -407,7 +412,9 @@ ifeq ($(ENABLE_DOPPLER),1)
 	CFLAGS  += -DENABLE_DOPPLER
 endif
 ifeq ($(ENABLE_RS41),1)
-	CFLAGS  += -DENABLE_RS41
+	CFLAGS += -DENABLE_RS41
+	ENABLE_DTMF_CALLING=0
+	ENABLE_UART=0
 endif
 ifeq ($(ENABLE_4732),1)
 	CFLAGS  += -DENABLE_4732
