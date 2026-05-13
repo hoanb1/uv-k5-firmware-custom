@@ -9,8 +9,6 @@ To successfully decode the RS41's 4800 baud GFSK telemetry, the MCU needs access
 **Required Mod:**
 You must connect **Pin 6 (EARO)** of the BK4819 to **PA8** of the DP32G030 MCU via a **DC-blocking capacitor** (e.g., 100nF). This bypasses the internal audio filters and provides a clean waveform to the MCU's ADC for processing.
 
-> **⚠️ Warning - Bootloader Issue:** PA8 is shared with the `UART1_RX` pin used for firmware flashing. The AC noise from the radio or floating logic levels can sometimes cause the MCU to mistakenly enter flash mode (flashlight on, blank screen) during boot. To prevent this, it is highly recommended to add a **physical switch** in series with this connection. Keep the switch OFF during normal boot, and turn it ON only when using the Radiosonde feature.
-
 > **Note:** Previously, Pin 28 (GPIO0) was tested, but using Pin 6 allows the `RX_ENABLE` circuit and LNA to function normally, significantly improving reception range.
 
 ![Audio Connection Hardware Mod](../images/audio-connection.jpg)
