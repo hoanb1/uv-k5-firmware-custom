@@ -1,6 +1,7 @@
 *.d
 *.o
 firmware
-/firmware.packed.bin
-/firmware.bin
+*.bin
+__pycache__/
 /compiled-firmware
+k5prog_src/
