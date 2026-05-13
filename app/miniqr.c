@@ -53,36 +53,35 @@ void miniqr_encode(const char *text, uint8_t qrcode[25][25]) {
     }
     for (int i = 0; i < 10; i++) data[34 + i] = ec[i];
     
-    uint8_t grid[25][25];
-    memset(grid, 2, sizeof(grid));
+    memset(qrcode, 2, 25*25);
 
     for (int i = 0; i < 7; i++) {
         for (int j = 0; j < 7; j++) {
             bool dark = (i==0||i==6||j==0||j==6||(i>=2&&i<=4&&j>=2&&j<=4));
-            grid[i][j] = dark;
-            grid[i][24-j] = dark;
-            grid[24-i][j] = dark;
+            qrcode[i][j] = dark;
+            qrcode[i][24-j] = dark;
+            qrcode[24-i][j] = dark;
         }
     }
     for (int i=0; i<=7; i++) {
-        grid[7][i] = 0; grid[i][7] = 0;
-        grid[7][24-i] = 0; grid[i][24-7] = 0;
-        grid[24-7][i] = 0; grid[24-i][7] = 0;
+        qrcode[7][i] = 0; qrcode[i][7] = 0;
+        qrcode[7][24-i] = 0; qrcode[i][24-7] = 0;
+        qrcode[24-7][i] = 0; qrcode[24-i][7] = 0;
     }
     for (int i=-2; i<=2; i++) {
         for (int j=-2; j<=2; j++) {
-            grid[18+i][18+j] = (i==-2||i==2||j==-2||j==2||(i==0&&j==0));
+            qrcode[18+i][18+j] = (i==-2||i==2||j==-2||j==2||(i==0&&j==0));
         }
     }
-    for (int i=8; i<25-8; i++) { grid[6][i] = (i%2==0); grid[i][6] = (i%2==0); }
-    grid[24-7][8] = 1;
+    for (int i=8; i<25-8; i++) { qrcode[6][i] = (i%2==0); qrcode[i][6] = (i%2==0); }
+    qrcode[24-7][8] = 1;
 
     uint16_t fmt = 0x77c4; 
     for (int i=0; i<15; i++) {
         bool dark = (fmt >> i) & 1;
-        if (i < 6) { grid[i][8] = dark; grid[8][25-1-i] = dark; }
-        else if (i < 8) { grid[i+1][8] = dark; grid[8][25-1-i] = dark; }
-        else { grid[8][i==8 ? 7 : 14-i] = dark; grid[25-15+i][8] = dark; }
+        if (i < 6) { qrcode[i][8] = dark; qrcode[8][25-1-i] = dark; }
+        else if (i < 8) { qrcode[i+1][8] = dark; qrcode[8][25-1-i] = dark; }
+        else { qrcode[8][i==8 ? 7 : 14-i] = dark; qrcode[25-15+i][8] = dark; }
     }
 
     int bit_idx = 0;
@@ -92,11 +91,11 @@ void miniqr_encode(const char *text, uint8_t qrcode[25][25]) {
         if (x == 6) x--;
         while (y >= 0 && y < 25) {
             for (int j = 0; j < 2; j++) {
-                if (grid[y][x - j] == 2) {
+                if (qrcode[y][x - j] == 2) {
                     bool bit = 0;
                     if (bit_idx < 44 * 8) bit = (data[bit_idx / 8] >> (7 - (bit_idx % 8))) & 1;
                     bool mask = ((y + x - j) % 2 == 0);
-                    grid[y][x - j] = bit ^ mask;
+                    qrcode[y][x - j] = bit ^ mask;
                     bit_idx++;
                 }
             }
@@ -105,6 +104,4 @@ void miniqr_encode(const char *text, uint8_t qrcode[25][25]) {
         dir = -dir;
         y += dir;
     }
-
-    for(int i=0; i<25; i++) for(int j=0; j<25; j++) qrcode[i][j] = grid[i][j];
 }

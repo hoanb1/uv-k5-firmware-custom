@@ -179,7 +179,7 @@ endif
 ifeq ($(ENABLE_RS41),1)
     OBJS += app/rs41.o
     OBJS += app/radiosonde.o
-    OBJS += 
+    OBJS += app/miniqr.o
 endif
 ifeq ($(ENABLE_DOPPLER),1)
     OBJS += app/doppler.o
@@ -219,7 +219,7 @@ ifeq ($(ENABLE_UART),1)
 endif
 
 # Main
-OBJS += app/action.o app/miniqr.o
+OBJS += app/action.o
 ifeq ($(ENABLE_AIRCOPY),1)
 	OBJS += app/aircopy.o
 endif
