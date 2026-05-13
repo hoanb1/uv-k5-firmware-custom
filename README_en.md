@@ -63,7 +63,7 @@ functions:
 * **AM fix**
 * **SSB demodulation**
 
-> ⚠️ **Important Note for Radiosonde Firmware:** To free up ROM/Flash memory for the complex RS41 decoder, secondary features such as **FM Radio, Spectrum Analyzer, MDC1200, SMS, Doppler, and SI4732** have been **disabled** in this build.
+> ⚠️ **Memory (ROM) Limitation Note:** The MCU has only 64KB of Flash memory, so it is impossible to enable all features simultaneously. For example, the **custom Radiosonde RS41 build** automatically disables large features (FM Radio, Spectrum Analyzer, MDC1200, SI4732, etc.) to make room for the complex decoding algorithms. Other standard builds retain FMRadio and SI4732 functionalities as normal.
 
 # Operating Instructions (Mandatory Reading!!)
 

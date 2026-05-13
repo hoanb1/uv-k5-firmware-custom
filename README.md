@@ -64,7 +64,7 @@
 * **AM 修复**
 * **SSB 解调**
 
-> ⚠️ **Lưu ý cho phiên bản Radiosonde:** Để giải phóng bộ nhớ (Flash/ROM) cho module giải mã tín hiệu thám không RS41, các tính năng phụ như **FM Radio, Spectrum (Phổ), MDC1200, SMS, Doppler và SI4732** đã bị **vô hiệu hóa** trong bản build này.
+> ⚠️ **Lưu ý về bộ nhớ (ROM):** Vi điều khiển chỉ có 64KB Flash. Không thể bật tất cả các tính năng cùng lúc. Ví dụ: **Bản build chuyên dụng cho Radiosonde RS41** sẽ tự động tắt các tính năng chiếm nhiều bộ nhớ (FM Radio, Spectrum, MDC1200, SI4732...) để nhường chỗ cho thuật toán giải mã. Các bản build khác vẫn giữ nguyên FM Radio và SI4732 bình thường.
 
 # 操作说明(必读！！)
 
