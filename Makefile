@@ -174,6 +174,7 @@ endif
 ifeq ($(ENABLE_RS41),1)
     OBJS += app/rs41.o
     OBJS += app/radiosonde.o
+    OBJS += 
 endif
 ifeq ($(ENABLE_DOPPLER),1)
     OBJS += app/doppler.o

@@ -5,6 +5,7 @@
 
 #include "radiosonde.h"
 #include "rs41.h"
+#include "qrcodegen.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -39,7 +40,7 @@
 #define SONDE_FREQ_STEP      10000   // 100 kHz step for scanning
 #define SONDE_FREQ_DEFAULT 40300000   // 403.000 MHz default
 
-#define SONDE_SCAN_DWELL_MS   200    // ms per channel during scan
+#define SONDE_SCAN_DWELL_MS   2000   // 2s per channel (RS41 transmits every 1s)
 #define SONDE_RSSI_THRESHOLD  500    // RSSI threshold for signal detect
 #define SONDE_TIMEOUT_FRAMES  300    // ~30 seconds at 10 fps
 
@@ -60,66 +61,104 @@ static void Sonde_DrawStatusBar(void)
     if (gSondeApp.mode == SONDE_MODE_LISTEN) mode_str = "RX ";
     if (gSondeApp.mode == SONDE_MODE_SCAN)   mode_str = "SCN";
 
-    // Line 1: F + E (compact)
-    sprintf(str, "F:%u E:%u/%u OK:%u",
+    // Line 0: Frequency and Mode
+    sprintf(str, "FREQ:%3lu.%03lu %s", freq_mhz, freq_khz, mode_str);
+    UI_PrintStringSmall(str, 0, 127, 0);
+
+    // Line 1: F + E + OK
+    sprintf(str, "F:%u minE:%u OK:%u",
             gSondeApp.decoder.frames_received,
-            gSondeApp.decoder.last_errors,
-            gSondeApp.decoder.last_errors_inv,
+            gSondeApp.decoder.min_errors,
             gSondeApp.decoder.frames_crc_ok);
     UI_PrintStringSmall(str, 0, 127, 1);
-
-    // Line 2: Shift register at best match
-    sprintf(str, "%08lX%08lX",
-            (unsigned long)gSondeApp.decoder.last_shift_hi,
-            (unsigned long)gSondeApp.decoder.last_shift_lo);
-    UI_PrintStringSmall(str, 0, 127, 2);
-
-    // Line 3: ADC diagnostics
-    sprintf(str, "A:%u DC:%u", gSondeApp.last_adc_p2p, (unsigned int)(gSondeApp.adc_avg_x512 >> 9));
-    UI_PrintStringSmall(str, 0, 127, 3);
 }
 
 static void Sonde_DrawData(const RS41_Data_t *d)
 {
     char str[22];
 
-
-
-
     if (!d->valid) return;
 
-    // Line 4: Sonde ID
+    // Line 2: Sonde ID
     sprintf(str, "ID: %.8s", d->sonde_id);
-    UI_PrintStringSmall(str, 0, 127, 4);
+    UI_PrintStringSmall(str, 0, 127, 2);
 
-    // Line 5: Latitude
+    // Line 3: Latitude
     int32_t lat_deg = d->lat_1e6 / 1000000;
     int32_t lat_frac = d->lat_1e6 % 1000000;
     if (lat_frac < 0) lat_frac = -lat_frac;
     char lat_dir = (d->lat_1e6 >= 0) ? 'N' : 'S';
-    sprintf(str, "Lat: %ld.%04ld%c", (long)lat_deg, (long)(lat_frac / 100), lat_dir);
-    UI_PrintStringSmall(str, 0, 127, 5);
+    sprintf(str, "Lat: %ld.%04ld %c", (long)lat_deg, (long)(lat_frac / 100), lat_dir);
+    UI_PrintStringSmall(str, 0, 127, 3);
 
-    // Line 6: Longitude
+    // Line 4: Longitude
     int32_t lon_deg = d->lon_1e6 / 1000000;
     int32_t lon_frac = d->lon_1e6 % 1000000;
     if (lon_frac < 0) lon_frac = -lon_frac;
     char lon_dir = (d->lon_1e6 >= 0) ? 'E' : 'W';
-    sprintf(str, "Lon: %ld.%04ld%c", (long)lon_deg, (long)(lon_frac / 100), lon_dir);
+    sprintf(str, "Lon: %ld.%04ld %c", (long)lon_deg, (long)(lon_frac / 100), lon_dir);
+    UI_PrintStringSmall(str, 0, 127, 4);
+
+    // Line 5: Altitude and Battery
+    int32_t alt_m = d->alt_cm / 100;
+    sprintf(str, "Alt: %ldm  %u.%uV", (long)alt_m, d->batt_mv / 1000, (d->batt_mv % 1000) / 100);
+    UI_PrintStringSmall(str, 0, 127, 5);
+
+    // Line 6: Satellites and Time
+    sprintf(str, "Sat:%2u   %02u:%02u:%02u", 
+            d->numSV, d->gps_hour, d->gps_min, d->gps_sec);
     UI_PrintStringSmall(str, 0, 127, 6);
 
-    // Line 7: Altitude + battery
-    int32_t alt_m = d->alt_cm / 100;
-    sprintf(str, "Alt: %ldm  %umV", (long)alt_m, d->batt_mv);
+    // Line 7: Speed
+    int h_spd = d->vH_cm / 100;
+    int h_spd_f = (d->vH_cm % 100) / 10;
+    int v_spd = d->vV_cm / 100;
+    int v_spd_f = (d->vV_cm % 100) / 10;
+    if (v_spd_f < 0) v_spd_f = -v_spd_f;
+    
+    sprintf(str, "Hs:%d.%dm/s Vs:%d.%dm/s", h_spd, h_spd_f, v_spd, v_spd_f);
     UI_PrintStringSmall(str, 0, 127, 7);
+}
+
+static void Sonde_DrawQRCode(const RS41_Data_t *d) {
+    if (!d->valid) {
+        UI_PrintStringSmall("NO GPS DATA", 0, 127, 3);
+        return;
+    }
+
+    char str[32];
+    int32_t lat_deg = d->lat_1e6 / 1000000;
+    int32_t lat_frac = d->lat_1e6 % 1000000;
+    if (lat_frac < 0) lat_frac = -lat_frac;
+    int32_t lon_deg = d->lon_1e6 / 1000000;
+    int32_t lon_frac = d->lon_1e6 % 1000000;
+    if (lon_frac < 0) lon_frac = -lon_frac;
+
+    UI_PrintStringSmall("ROM TOO SMALL FOR QR", 0, 127, 1);
+    UI_PrintStringSmall("SCAN TEXT WITH LENS:", 0, 127, 2);
+
+    sprintf(str, "Lat: %ld.%04ld", (long)lat_deg, (long)(lat_frac / 100));
+    UI_PrintStringSmall(str, 0, 127, 4);
+
+    sprintf(str, "Lon: %ld.%04ld", (long)lon_deg, (long)(lon_frac / 100));
+    UI_PrintStringSmall(str, 0, 127, 5);
+
+    int32_t alt_m = d->alt_cm / 100;
+    sprintf(str, "Alt: %ld m", (long)alt_m);
+    UI_PrintStringSmall(str, 0, 127, 6);
 }
 
 static void Sonde_Render(void)
 {
     UI_DisplayClear();
-    Sonde_DrawStatusBar();
-    const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
-    Sonde_DrawData(d);
+    if (gSondeApp.mode == SONDE_MODE_QR) {
+        const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
+        Sonde_DrawQRCode(d);
+    } else {
+        Sonde_DrawStatusBar();
+        const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
+        Sonde_DrawData(d);
+    }
     ST7565_BlitFullScreen();
 }
 
@@ -243,12 +282,13 @@ static bool Sonde_HandleKeys(void)
             break;
 
         case KEY_MENU:
-            // Toggle between listen and scan mode
             if (gSondeApp.mode == SONDE_MODE_LISTEN) {
                 gSondeApp.mode = SONDE_MODE_SCAN;
                 gSondeApp.frequency = SONDE_FREQ_START;
                 Sonde_SetupReceiver(gSondeApp.frequency);
                 RS41_Reset(&gSondeApp.decoder);
+            } else if (gSondeApp.mode == SONDE_MODE_SCAN) {
+                gSondeApp.mode = SONDE_MODE_QR;
             } else {
                 gSondeApp.mode = SONDE_MODE_LISTEN;
             }

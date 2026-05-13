@@ -556,10 +556,12 @@ void ACTION_WIDTH(void) {
 }
 
 void ACTION_D_DCD(void) {
+#ifdef ENABLE_DTMF_CALLING
     gRequestSaveChannel = 1;
 
     gTxVfo->DTMF_DECODING_ENABLE = !gTxVfo->DTMF_DECODING_ENABLE;
     DTMF_clear_RX();
+#endif
 }
 
 #ifdef ENABLE_SIDEFUNCTIONS_SEND

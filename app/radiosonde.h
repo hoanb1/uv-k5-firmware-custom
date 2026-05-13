@@ -14,6 +14,7 @@ typedef enum {
     SONDE_MODE_IDLE,
     SONDE_MODE_LISTEN,
     SONDE_MODE_SCAN,
+    SONDE_MODE_QR,
 } SondeMode_t;
 
 // Application context
