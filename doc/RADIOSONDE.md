@@ -43,4 +43,10 @@ To make retrieving the balloon easier, you can switch the display to show a dyna
 - **Aspect Ratio Correction**: The UV-K5 LCD has rectangular (non-square) pixels. The firmware uses a precise **3x2 integer scaling** algorithm to ensure the QR code renders as a perfect physical square.
 - **Quiet Zones**: The QR code is specifically offset (`offset_y = 6`) to clear the physical black bezel of the screen, ensuring standard white quiet zones are maintained for 100% reliable scanning under any lighting condition.
 
-![Radiosonde QR Code Display](../images/radio-sonde-qr.jpg)
+## Specialized High-Feature Build (RS41 + SI4732 + SSB)
+
+If you have the SI4732 hardware mod and want to keep RS41, SSB, and SI4732 support while disabling other non-essential features to save space, use the following command:
+
+```bash
+make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1 ENABLE_MESSENGER=0 ENABLE_MDC1200=0 ENABLE_FMRADIO=0 ENABLE_UART=0 ENABLE_DTMF_CALLING=0 ENABLE_AIRCOPY=0 ENABLE_ALARM=0 ENABLE_TX1750=0 ENABLE_VOX=0 ENABLE_BIG_FREQ=0 ENABLE_NO_CODE_SCAN_TIMEOUT=0 ENABLE_AM_FIX=0 ENABLE_SQUELCH_MORE_SENSITIVE=0 ENABLE_FASTER_CHANNEL_SCAN=0 ENABLE_COPY_CHAN_TO_VFO=0 ENABLE_SCAN_RANGES=0 ENABLE_CUSTOM_SIDEFUNCTIONS=0 ENABLE_SIDEFUNCTIONS_SEND=0 ENABLE_WIDE_RX=0 ENABLE_KEEP_MEM_NAME=0 ENABLE_RSSI_BAR=0 ENABLE_PWRON_PASSWORD=0 ENABLE_FLASHLIGHT=0 ENABLE_UART_RW_BK_REGS=0 ENABLE_BOOT_BEEPS=0 ENABLE_REVERSE_BAT_SYMBOL=0 ENABLE_SHOW_CHARGE_LEVEL=0 ENABLE_SPECTRUM=0 ENABLE_CHINESE_FULL=0 ENABLE_PINYIN=0 && ./k5prog_src/k5prog -p /dev/ttyUSB1 -F -YYY -b firmware.bin
+```

@@ -332,8 +332,8 @@ static void rs41_parse_gps_pos(RS41_Decoder_t *dec)
 // ============================================================
 static void rs41_parse_frame(RS41_Decoder_t *dec)
 {
-    // Reset output
-    memset(&dec->data, 0, sizeof(RS41_Data_t));
+    // Reset crc_ok for the current frame, but keep old data
+    dec->data.crc_ok = 0;
 
     // Descramble the frame (XOR with LFSR mask)
     rs41_descramble(dec->frame, RS41_FRAME_LEN);
