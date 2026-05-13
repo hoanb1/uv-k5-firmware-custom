@@ -172,18 +172,25 @@ static void rs41_ecef_to_lla(int32_t ecef_x_cm, int32_t ecef_y_cm, int32_t ecef_
     const float ep2 = 0.00673949674228f;
     
     float p = sqrtf(x*x + y*y);
-    float th = atan2f(a*z, b*p);
+    
+    float th_y = a*z;
+    float th_x = b*p;
+    float th_hyp = sqrtf(th_x*th_x + th_y*th_y);
+    float sin_th = th_y / th_hyp;
+    float cos_th = th_x / th_hyp;
+    
+    float lat_y = z + ep2*b*sin_th*sin_th*sin_th;
+    float lat_x = p - e2*a*cos_th*cos_th*cos_th;
+    float lat = atan2f(lat_y, lat_x);
+    
+    float lat_hyp = sqrtf(lat_x*lat_x + lat_y*lat_y);
+    float sin_lat = lat_y / lat_hyp;
+    float cos_lat = lat_x / lat_hyp;
+    
+    float N = a / sqrtf(1.0f - e2*sin_lat*sin_lat);
+    float alt = p / cos_lat - N;
     
     float lon = atan2f(y, x);
-    float sin_th = sinf(th);
-    float cos_th = cosf(th);
-    
-    float lat = atan2f(z + ep2*b*sin_th*sin_th*sin_th,
-                       p - e2*a*cos_th*cos_th*cos_th);
-                       
-    float sin_lat = sinf(lat);
-    float N = a / sqrtf(1.0f - e2*sin_lat*sin_lat);
-    float alt = p / cosf(lat) - N;
     
     *lon_1e6 = (int32_t)(lon * (180.0f / 3.1415926535f) * 1000000.0f);
     *lat_1e6 = (int32_t)(lat * (180.0f / 3.1415926535f) * 1000000.0f);
@@ -469,3 +476,4 @@ const RS41_Data_t* RS41_GetData(const RS41_Decoder_t *dec)
 {
     return &dec->data;
 }
+

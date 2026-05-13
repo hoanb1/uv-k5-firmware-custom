@@ -161,7 +161,7 @@ static void Sonde_DrawQRCode(const RS41_Data_t *d) {
     // Center the QR code, but shift slightly up to avoid the bottom black bezel
     // and provide a guaranteed white quiet zone.
     int offset_x = (128 - size * scale_x) / 2;
-    int offset_y = 4; // 4 pixels of white at top, ensures bottom doesn't touch bezel
+    int offset_y = 6; // 6 pixels of white at top, perfectly centers the 50px tall QR code
 
     // Draw white background
     for (int y = 0; y < 64; y++) {
