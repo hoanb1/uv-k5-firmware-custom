@@ -49,7 +49,7 @@ functions:
 * **Larger EEPROM capacity**
 * **Automatic Doppler frequency shift**
 * Custom boot logo
-* **RS41 Radiosonde Decoder**
+* **Radiosonde RS41 Decoder** ([Detailed Hardware & Usage Guide](doc/RADIOSONDE.md))
 * **SI4732 support**
 * **Chinese/English support**
 * **Chinese input method**

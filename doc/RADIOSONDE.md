@@ -11,6 +11,19 @@ You must connect **Pin 6 (EARO)** of the BK4819 to **PA8** of the DP32G030 MCU v
 
 ![Audio Connection Hardware Mod](../images/audio-connection.jpg)
 
+## Hướng dẫn sử dụng (Usage Instructions)
+
+1. **Khởi động tính năng:** Từ màn hình chính, nhấn giữ phím **`9`** (hoặc `F+9` tùy máy) để mở bộ giải mã Radiosonde RS41.
+2. **Các phím điều khiển:**
+   - **`UP` / `DOWN`**: Tăng/giảm tần số đi 100 kHz (dải từ 400 MHz đến 406 MHz).
+   - **`MENU` (hoặc `M`)**: Chuyển đổi qua lại giữa màn hình Thông số (Monitor) và màn hình Mã QR (QR Code).
+   - **`1`**: Chuyển nhanh tần số về 400.000 MHz.
+   - **`2`**: Chuyển nhanh tần số về 402.000 MHz.
+   - **`3`**: Chuyển nhanh tần số về 403.000 MHz (tần số phổ biến nhất).
+   - **`4`**: Chuyển nhanh tần số về 404.000 MHz.
+   - **`5`**: Chuyển nhanh tần số về 405.000 MHz.
+   - **`EXIT`**: Thoát khỏi chế độ Radiosonde và trở về màn hình chính.
+
 ## Software Features
 
 The firmware utilizes a custom zero-crossing DPLL (Digital Phase Locked Loop) running on the ADC samples to synchronize and extract the digital frames.

@@ -50,7 +50,7 @@
 * **更大容量的Eeprom芯片**
 * **自动多普勒频移**
 * **自定义开机图**
-* **RS41 探空仪 (Radiosonde) 解码**
+* **Radiosonde RS41 Decoder** ([Hướng dẫn Cài đặt & Sử dụng chi tiết](doc/RADIOSONDE.md))
 * **SI4732支持**
 * **中/英文支持**
 * **中文输入法**
