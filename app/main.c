@@ -44,6 +44,9 @@
 #include "misc.h"
 #include "radio.h"
 #include "settings.h"
+#ifdef ENABLE_RS41
+#include "app/radiosonde.h"
+#endif
 #include "ui/inputbox.h"
 #include "ui/ui.h"
 #include <stdlib.h>
@@ -252,6 +255,10 @@ gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
             break;
 
         case KEY_9:
+#ifdef ENABLE_RS41
+            APP_RunRadiosonde();
+            gRequestDisplayScreen = DISPLAY_MAIN;
+#else
             if (RADIO_CheckValidChannel(gEeprom.CHAN_1_CALL, false, 0)) {
                 gEeprom.MrChannel[Vfo] = gEeprom.CHAN_1_CALL;
                 gEeprom.ScreenChannel[Vfo] = gEeprom.CHAN_1_CALL;
@@ -267,6 +274,7 @@ gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
 
             if (beep)
                 gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+#endif
             break;
 
         default:

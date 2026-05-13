@@ -72,6 +72,7 @@ ENABLE_4732 =0
 ENABLE_4732SSB =0
 
 ENABLE_DOPPLER               =0
+ENABLE_RS41                  =0
 #############################################################
 PACKED_FILE_SUFFIX = LOSEHU132
 ifeq ($(ENABLE_PINYIN),1)
@@ -169,6 +170,10 @@ endif
 
 ifeq ($(ENABLE_MDC1200),1)
     OBJS += app/mdc1200.o
+endif
+ifeq ($(ENABLE_RS41),1)
+    OBJS += app/rs41.o
+    OBJS += app/radiosonde.o
 endif
 ifeq ($(ENABLE_DOPPLER),1)
     OBJS += app/doppler.o
@@ -400,6 +405,9 @@ endif
 ifeq ($(ENABLE_DOPPLER),1)
 	CFLAGS  += -DENABLE_DOPPLER
 endif
+ifeq ($(ENABLE_RS41),1)
+	CFLAGS  += -DENABLE_RS41
+endif
 ifeq ($(ENABLE_4732),1)
 	CFLAGS  += -DENABLE_4732
 endif
@@ -580,7 +588,7 @@ INC += -I $(TOP)
 INC += -I $(TOP)/external/CMSIS_5/CMSIS/Core/Include/
 INC += -I $(TOP)/external/CMSIS_5/Device/ARM/ARMCM0/Include
 
-LIBS =
+LIBS = -lm
 
 
 DEPS = $(OBJS:.o=.d)
