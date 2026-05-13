@@ -33,13 +33,16 @@ extern void miniqr_encode(const char *text, uint8_t qrcode[25][25]);
 #include "../bsp/dp32g030/portcon.h"
 #include "../bsp/dp32g030/saradc.h"
 #include "ARMCM0.h"
+#include "../ui/ui.h"
 
 // Default RS41 frequency range (400.000 - 406.000 MHz)
 // BK4819 uses freq/10 format
 #define SONDE_FREQ_START   40000000   // 400.000 MHz
 #define SONDE_FREQ_END     40600000   // 406.000 MHz
-#define SONDE_FREQ_STEP      10000   // 100 kHz step for scanning
 #define SONDE_FREQ_DEFAULT 40300000   // 403.000 MHz default
+
+static const uint32_t SONDE_STEPS[] = { 100000, 10000, 1000, 100 };
+static void Sonde_DrawPixel(int x, int y, bool black);
 
 #define SONDE_SCAN_DWELL_MS   2000   // 2s per channel (RS41 transmits every 1s)
 #define SONDE_RSSI_THRESHOLD  500    // RSSI threshold for signal detect
@@ -51,23 +54,68 @@ SondeApp_t gSondeApp;
 // Display helpers
 // ============================================================
 
-static void Sonde_DrawStatusBar(void)
+static void Sonde_DrawStatusBar(void) {
+    // Clear status line
+    memset(gStatusLine, 0, sizeof(gStatusLine));
+
+    // Title
+    UI_PrintStringSmallBuffer("SONDE", gStatusLine);
+
+    // History Bar (Center)
+    char hstr[12];
+    uint8_t ptr = gSondeApp.history_ptr;
+    for (int i = 0; i < 8; i++) {
+        hstr[i] = (char)gSondeApp.history[(ptr + i) % 10];
+    }
+    hstr[8] = '\0';
+    UI_PrintStringSmallBuffer(hstr, gStatusLine + 36);
+
+    // RSSI Bar
+    // Map RSSI (0-1000) to pixels (0-24)
+    int rssi_len = (gSondeApp.last_rssi * 24) / 1000;
+    if (rssi_len > 24) rssi_len = 24;
+    for (int i = 0; i < rssi_len; i++) {
+        for (int j = 1; j < 5; j++) {
+            Sonde_DrawPixel(100 + i, j, true);
+        }
+    }
+}
+
+
+static void Sonde_DrawDiagnostic(void)
 {
     char str[32];
+    GUI_DisplaySmallest("--- DIAGNOSTICS ---", 0, 8, false, true);
+    
+    sprintf(str, "RSSI: %d", gSondeApp.last_rssi);
+    GUI_DisplaySmallest(str, 0, 16, false, true);
+    
+    sprintf(str, "ADC P2P: %u", gSondeApp.last_adc_p2p);
+    GUI_DisplaySmallest(str, 0, 24, false, true);
+    
+    sprintf(str, "DC Offs: %u", gSondeApp.adc_avg_x512 >> 9);
+    GUI_DisplaySmallest(str, 0, 32, false, true);
 
-    uint32_t freq_mhz = gSondeApp.frequency / 100000;
-    uint32_t freq_khz = (gSondeApp.frequency / 100) % 1000;
+    const char* g_modes[] = {"AUTO", "LOW", "MID", "HIGH", "MAX"};
+    sprintf(str, "Gain Mode: %s", g_modes[gSondeApp.gain_mode]);
+    GUI_DisplaySmallest(str, 64, 32, false, true);
 
-    // Line 0: Frequency
-    sprintf(str, "FREQ: %3lu.%03lu MHz", freq_mhz, freq_khz);
-    GUI_DisplaySmallest(str, 0, 0, false, true);
+    const char *state_str = "SEARCHING";
+    if (gSondeApp.decoder.state == RS41_STATE_COLLECT_FRAME) state_str = "COLLECTING";
+    sprintf(str, "State: %s", state_str);
+    GUI_DisplaySmallest(str, 0, 40, false, true);
+
+    // Alerts (Line 6)
+    if (gSondeApp.last_adc_p2p > 3800 || (gSondeApp.adc_avg_x512 >> 9) > 3500) {
+        GUI_DisplaySmallest("!! CLIPPING !!", 0, 48, false, true);
+    } else if (gSondeApp.timeout_frames > 30) {
+        GUI_DisplaySmallest("!! NO SIGNAL 30s !!", 0, 48, false, true);
+    }
 }
 
 static void Sonde_DrawData(const RS41_Data_t *d)
 {
     char str[32];
-
-    if (!d->valid) return;
 
     // Line 1: Sonde ID
     sprintf(str, "ID: %.8s", d->sonde_id);
@@ -89,24 +137,22 @@ static void Sonde_DrawData(const RS41_Data_t *d)
     sprintf(str, "Lon: %ld.%04ld %c", (long)lon_deg, (long)(lon_frac / 100), lon_dir);
     GUI_DisplaySmallest(str, 0, 24, false, true);
 
-    // Line 4: Altitude and Battery
+    // Line 4: Altitude and AGC Gain
     int32_t alt_m = d->alt_cm / 100;
-    sprintf(str, "Alt: %ldm  %u.%uV", (long)alt_m, d->batt_mv / 1000, (d->batt_mv % 1000) / 100);
+    const char* g_modes[] = {"AUTO", "LOW", "MID", "HIGH", "MAX"};
+    sprintf(str, "Alt: %ldm   G:%s", (long)alt_m, g_modes[gSondeApp.gain_mode]);
     GUI_DisplaySmallest(str, 0, 32, false, true);
 
-    // Line 5: Satellites and Time
-    sprintf(str, "Sat:%2u   %02u:%02u:%02u", 
-            d->numSV, d->gps_hour, d->gps_min, d->gps_sec);
+    // Line 5: Velocity
+    int h_spd = d->vH_cm / 100;
+    int v_spd = d->vV_cm / 100;
+    sprintf(str, "Vel: H:%dm/s V:%dm/s", h_spd, v_spd);
     GUI_DisplaySmallest(str, 0, 40, false, true);
 
-    // Line 6: Speed
-    int h_spd = d->vH_cm / 100;
-    int h_spd_f = (d->vH_cm % 100) / 10;
-    int v_spd = d->vV_cm / 100;
-    int v_spd_f = (d->vV_cm % 100) / 10;
-    if (v_spd_f < 0) v_spd_f = -v_spd_f;
-    
-    sprintf(str, "Hs:%d.%dm/s Vs:%d.%dm/s", h_spd, h_spd_f, v_spd, v_spd_f);
+    // Line 6: GPS Satellites, Time, Battery
+    sprintf(str, "Sat:%2u %02u:%02u:%02u %u.%uV", 
+            d->numSV, d->gps_hour, d->gps_min, d->gps_sec,
+            d->batt_mv / 1000, (d->batt_mv % 1000) / 100);
     GUI_DisplaySmallest(str, 0, 48, false, true);
 }
 
@@ -186,20 +232,33 @@ static void Sonde_DrawQRCode(const RS41_Data_t *d) {
 static void Sonde_Render(void)
 {
     UI_DisplayClear();
+    memset(gStatusLine, 0, sizeof(gStatusLine));
+    
+    // ALWAYS DRAW FREQUENCY AND STEP AT y=0 BEFORE ANYTHING ELSE
+    char fstr[32];
+    const char *step_str = (gSondeApp.step_idx == 0) ? "1M" : 
+                           (gSondeApp.step_idx == 1) ? "100k" :
+                           (gSondeApp.step_idx == 2) ? "10k" : "1k";
+    sprintf(fstr, "FREQ: %3u.%03u  %s", 
+            gSondeApp.frequency / 100000, 
+            (gSondeApp.frequency % 100000) / 100, 
+            step_str);
+    GUI_DisplaySmallest(fstr, 0, 0, false, true);
+
+    Sonde_DrawStatusBar();
+
+    const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
+
     if (gSondeApp.mode == SONDE_MODE_QR) {
-        memset(gStatusLine, 0, sizeof(gStatusLine));
-        const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
         Sonde_DrawQRCode(d);
-        ST7565_BlitStatusLine();
-        ST7565_BlitFullScreen();
+    } else if (gSondeApp.mode == SONDE_MODE_DIAGNOSTIC) {
+        Sonde_DrawDiagnostic();
     } else {
-        memset(gStatusLine, 0, sizeof(gStatusLine));
-        Sonde_DrawStatusBar();
-        const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
         Sonde_DrawData(d);
-        ST7565_BlitStatusLine();
-        ST7565_BlitFullScreen();
     }
+
+    ST7565_BlitStatusLine();
+    ST7565_BlitFullScreen();
 }
 
 // ============================================================
@@ -247,8 +306,12 @@ static void Sonde_SetupReceiver(uint32_t freq)
     // REG_48: <13> = Mute, <6:0> = Gain (0-127)
     uint16_t reg_48 = BK4819_ReadRegister(0x48);
     reg_48 &= ~(1u << 13); // Unmute
-    reg_48 = (reg_48 & ~0x007F) | 127; // Max gain
+    reg_48 = (reg_48 & ~0x007F) | 60; // Moderate AF gain to prevent clipping
     BK4819_WriteRegister(0x48, reg_48);
+
+    // Set PGA Gain (Reg 0x13): bit 0-6 is LNA/PGA gain.
+    // Setting to 0x20 to further reduce clipping risk.
+    BK4819_WriteRegister(0x13, 0x0020);
 
     // Disable RX AF filters for raw FSK data:
     uint16_t reg_2b = BK4819_ReadRegister(0x2B);
@@ -303,12 +366,10 @@ static bool Sonde_HandleKeys(void)
 
     switch (key) {
         case KEY_EXIT:
-            // Exit radiosonde mode
             return true;
 
         case KEY_UP:
-            // Increase frequency by step
-            gSondeApp.frequency += SONDE_FREQ_STEP;
+            gSondeApp.frequency += SONDE_STEPS[gSondeApp.step_idx];
             if (gSondeApp.frequency > SONDE_FREQ_END)
                 gSondeApp.frequency = SONDE_FREQ_START;
             Sonde_SetupReceiver(gSondeApp.frequency);
@@ -316,56 +377,80 @@ static bool Sonde_HandleKeys(void)
             break;
 
         case KEY_DOWN:
-            // Decrease frequency
-            if (gSondeApp.frequency <= SONDE_FREQ_START)
+            if (gSondeApp.frequency <= SONDE_FREQ_START + SONDE_STEPS[gSondeApp.step_idx])
                 gSondeApp.frequency = SONDE_FREQ_END;
             else
-                gSondeApp.frequency -= SONDE_FREQ_STEP;
+                gSondeApp.frequency -= SONDE_STEPS[gSondeApp.step_idx];
             Sonde_SetupReceiver(gSondeApp.frequency);
             RS41_Reset(&gSondeApp.decoder);
             break;
 
-        case KEY_MENU:
-            if (gSondeApp.mode == SONDE_MODE_LISTEN) {
-                gSondeApp.mode = SONDE_MODE_QR;
-            } else {
-                gSondeApp.mode = SONDE_MODE_LISTEN;
-            }
+        case KEY_STAR:
+            // Cycle step
+            gSondeApp.step_idx = (gSondeApp.step_idx + 1) % 4;
             break;
 
-        case KEY_1:
-            // Quick tune: 400 MHz
+        case KEY_0: // 400.000 MHz
             gSondeApp.frequency = 40000000;
             Sonde_SetupReceiver(gSondeApp.frequency);
             RS41_Reset(&gSondeApp.decoder);
             break;
-
-        case KEY_2:
-            // Quick tune: 402 MHz
+        case KEY_1: // 401.000 MHz
+            gSondeApp.frequency = 40100000;
+            Sonde_SetupReceiver(gSondeApp.frequency);
+            RS41_Reset(&gSondeApp.decoder);
+            break;
+        case KEY_2: // 402.000 MHz
             gSondeApp.frequency = 40200000;
             Sonde_SetupReceiver(gSondeApp.frequency);
             RS41_Reset(&gSondeApp.decoder);
             break;
-
-        case KEY_3:
-            // Quick tune: 403 MHz (most common)
+        case KEY_3: // 403.000 MHz
             gSondeApp.frequency = 40300000;
             Sonde_SetupReceiver(gSondeApp.frequency);
             RS41_Reset(&gSondeApp.decoder);
             break;
-
-        case KEY_4:
-            // Quick tune: 404 MHz
+        case KEY_4: // 404.000 MHz
             gSondeApp.frequency = 40400000;
             Sonde_SetupReceiver(gSondeApp.frequency);
             RS41_Reset(&gSondeApp.decoder);
             break;
-
-        case KEY_5:
-            // Quick tune: 405 MHz
+        case KEY_5: // 405.000 MHz
             gSondeApp.frequency = 40500000;
             Sonde_SetupReceiver(gSondeApp.frequency);
             RS41_Reset(&gSondeApp.decoder);
+            break;
+        case KEY_6: // 406.000 MHz
+            gSondeApp.frequency = 40600000;
+            Sonde_SetupReceiver(gSondeApp.frequency);
+            RS41_Reset(&gSondeApp.decoder);
+            break;
+
+        case KEY_7:
+            gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
+            break;
+        case KEY_8:
+            gSondeApp.mode = SONDE_MODE_MONITOR;
+            break;
+        case KEY_9:
+            gSondeApp.mode = SONDE_MODE_QR;
+            break;
+
+        case KEY_MENU:
+            // Cycle Gain mode: Auto -> Low -> Mid -> High -> Max
+            gSondeApp.gain_mode = (gSondeApp.gain_mode + 1) % 5;
+            // Immediate force AGC logic reset to apply new gain immediately
+            gSondeApp.agc_counter = 10;
+            break;
+
+        case KEY_F:
+            // Toggle audio output
+            gSondeApp.audio_enabled = !gSondeApp.audio_enabled;
+            if (gSondeApp.audio_enabled) {
+                AUDIO_AudioPathOn();
+            } else {
+                AUDIO_AudioPathOff();
+            }
             break;
 
         default:
@@ -384,50 +469,47 @@ static bool Sonde_HandleKeys(void)
 
 void APP_RunRadiosonde(void)
 {
-    // Initialize
+    // Initialize application state
     memset(&gSondeApp, 0, sizeof(SondeApp_t));
-    gSondeApp.mode = SONDE_MODE_LISTEN;
+    gSondeApp.decoder.data.valid = false;
+    gSondeApp.timeout_frames = 0;
+    gSondeApp.agc_counter = 0;
+    gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
     gSondeApp.frequency = SONDE_FREQ_DEFAULT;
+    gSondeApp.step_idx = 1; // 100 kHz default
+    gSondeApp.gain_mode = 0; // Auto Gain
+    gSondeApp.audio_enabled = true;
+    memset(gSondeApp.history, ' ', 10);
+    gSondeApp.history_ptr = 0;
+    gSondeApp.pending_history = '.';
+    gSondeApp.history_sample_acc = 0;
 
     // ADC setup for signal monitoring (PA8 / UART1_RX -> ADC_CH3)
     PORTCON_PORTA_IE &= ~PORTCON_PORTA_IE_A8_MASK;
-    PORTCON_PORTA_PU |= PORTCON_PORTA_PU_A8_MASK;   // Enable Pull-Up
-    PORTCON_PORTA_PD |= PORTCON_PORTA_PD_A8_MASK;   // Enable Pull-Down to create ~VDD/2 bias
+    PORTCON_PORTA_PU &= ~PORTCON_PORTA_PU_A8_MASK;  // Disable Pull-Up
+    PORTCON_PORTA_PD |= PORTCON_PORTA_PD_A8_MASK;   // Enable Pull-Down only to lower bias
     PORTCON_PORTA_SEL1 &= ~PORTCON_PORTA_SEL1_A8_MASK;
     PORTCON_PORTA_SEL1 |= PORTCON_PORTA_SEL1_A8_BITS_SARADC_CH3;
 
     RS41_Init(&gSondeApp.decoder);
 
-    // Enable backlight
+    // Enable backlight and setup receiver
     BACKLIGHT_TurnOn();
-
-    // Setup receiver
     Sonde_SetupReceiver(gSondeApp.frequency);
     AUDIO_AudioPathOn();
-
-    // Initial render
     Sonde_Render();
-
-    uint16_t render_timer = 0;
-    uint16_t sample_timer = 0;
 
     // Main loop — runs until user presses EXIT
     while (!gSondeApp.exit_requested) {
 
-        // Handle keyboard
+        // Handle keyboard inputs
         if (Sonde_HandleKeys()) {
             gSondeApp.exit_requested = true;
             break;
         }
 
-
-
-        // Sample bits from FM demodulator
-        // Using a Digital Phase Locked Loop (DPLL) for clock recovery
-        // 4800 baud bit period is ~208 us. We sample 4x faster (52 us)
-        if (gSondeApp.mode == SONDE_MODE_LISTEN) {
-
-            // ADC sampling on PA8/ADC_CH3 (connected to BK4819 EARO via 100nF cap)
+        if (gSondeApp.mode != SONDE_MODE_QR) {
+            // Configure ADC to read CH3 (PA8)
             SARADC_CFG = (SARADC_CFG & ~SARADC_CFG_CH_SEL_MASK) | 
                          ((ADC_CH3 << SARADC_CFG_CH_SEL_SHIFT) & SARADC_CFG_CH_SEL_MASK);
 
@@ -439,89 +521,186 @@ void APP_RunRadiosonde(void)
             // Zero-crossing state
             int par_alt = 1;
             uint32_t samples_since_cross = 0;
+            static int32_t centered_old = 0;
 
             uint32_t start_val = SysTick->VAL;
+
+            // Inner bit-recovery loop (processes up to 1 second of samples)
             while (1) {
-            sample_count++;
-            
-            // Read ADC
-            ADC_Start();
-            while (!ADC_CheckEndOfConversion(ADC_CH3)) {}
-            uint16_t adc_val = ADC_GetValue(ADC_CH3);
-            
-            if (adc_val < local_min) local_min = adc_val;
-            if (adc_val > local_max) local_max = adc_val;
-
-            // Dynamic DC threshold (slow EMA, alpha = 1/256)
-            gSondeApp.last_adc_raw = adc_val;
-            if (gSondeApp.adc_avg_x512 == 0) gSondeApp.adc_avg_x512 = (uint32_t)adc_val << 9;
-            gSondeApp.adc_avg_x512 = (gSondeApp.adc_avg_x512 * 511 + ((uint32_t)adc_val << 9)) >> 9;
-            uint16_t threshold = gSondeApp.adc_avg_x512 >> 9;
-            
-            // Remove DC offset
-            int32_t centered = (int32_t)adc_val - (int32_t)threshold;
-            gSondeApp.last_amplitude = (uint16_t)((centered > 0) ? centered : -centered);
-
-            // Hysteresis for Zero-crossing:
-            // Only consider it a valid signal if amplitude is somewhat reasonable
-            int current_par = (centered > 100) ? 1 : ((centered < -100) ? -1 : par_alt);
-
-
-            if (current_par * par_alt <= 0) { // Zero crossing occurred
-                // 38400 Hz sampling / 4800 baud = 8 samples per bit
-                int len = (samples_since_cross + 4) / 8;
-                int bit = (par_alt > 0) ? 1 : 0;
+                sample_count++;
                 
-                for (int i = 0; i < len; i++) {
-                    if (RS41_ProcessBit(&gSondeApp.decoder, bit)) {
-                        frame_decoded = true;
-                        break;
+                // Read ADC sample
+                ADC_Start();
+                while (!ADC_CheckEndOfConversion(ADC_CH3)) {}
+                uint16_t adc_val = ADC_GetValue(ADC_CH3);
+                
+                // Track min/max for P2P amplitude
+                if (adc_val < local_min) local_min = adc_val;
+                if (adc_val > local_max) local_max = adc_val;
+
+                // Dynamic DC threshold (slow EMA, alpha = 1/256)
+                gSondeApp.last_adc_raw = adc_val;
+                if (gSondeApp.adc_avg_x512 == 0) gSondeApp.adc_avg_x512 = (uint32_t)adc_val << 9;
+                gSondeApp.adc_avg_x512 = (gSondeApp.adc_avg_x512 * 255 + ((uint32_t)adc_val << 9)) >> 8;
+                
+                int32_t centered = (int32_t)adc_val - (int32_t)(gSondeApp.adc_avg_x512 >> 9);
+                gSondeApp.last_amplitude = (uint16_t)((centered > 0) ? centered : -centered);
+
+                // Simple 2-sample LPF to smooth out noise spikes without losing bit edges
+                int32_t filtered = (centered + centered_old) >> 1;
+                centered_old = centered;
+
+                // Hysteresis for Zero-crossing
+                int current_par = (filtered > 100) ? 1 : ((filtered < -100) ? -1 : par_alt);
+
+                // Zero crossing logic (DPLL)
+                if (current_par * par_alt <= 0) {
+                    // 38400 Hz sampling / 4800 baud = 8 samples per bit
+                    int len = (samples_since_cross + 4) / 8;
+                    int bit = (par_alt > 0) ? 1 : 0;
+                    
+                    for (int i = 0; i < len; i++) {
+                        if (RS41_ProcessBit(&gSondeApp.decoder, bit)) {
+                            frame_decoded = true;
+                            break;
+                        }
                     }
+                    
+                    samples_since_cross = 0;
+                    par_alt = current_par;
                 }
-                
-                samples_since_cross = 0;
-                par_alt = current_par;
-            }
-            samples_since_cross++;
+                samples_since_cross++;
 
-            // Breakout conditions
-            if (frame_decoded) break;
-            // 8x oversampling: 200ms = 7680 samples, 1s = 38400 samples
-            if (gSondeApp.decoder.state != RS41_STATE_COLLECT_FRAME && sample_count > 7680) break;
-            if (sample_count > 38400) break;
+                // Breakout conditions
+                if (frame_decoded) break;
+                // 8x oversampling: 200ms = 7680 samples, 1s = 38400 samples
+                if (gSondeApp.decoder.state != RS41_STATE_COLLECT_FRAME && sample_count > 7680) break;
+                if (sample_count > 38400) break;
 
-            // Wait 26µs (1250 ticks at 48MHz) for 38400 Hz sampling rate
-            while (1) {
-                uint32_t current_val = SysTick->VAL;
-                uint32_t elapsed = (start_val >= current_val) ? (start_val - current_val) : (SysTick->LOAD - current_val + start_val);
-                if (elapsed >= 1250) break;
-            }
-            // Advance start_val by 1250 for isochronous sampling (SysTick counts down)
-            start_val = (start_val >= 1250) ? (start_val - 1250) : (SysTick->LOAD - (1250 - start_val) + 1);
+                // Wait 26µs (1250 ticks at 48MHz) for 38400 Hz sampling rate
+                while (1) {
+                    uint32_t current_val = SysTick->VAL;
+                    uint32_t elapsed = (start_val >= current_val) ? (start_val - current_val) : (SysTick->LOAD - current_val + start_val);
+                    if (elapsed >= 1250) break;
+                }
+                // Advance start_val by 1250 for isochronous sampling (SysTick counts down)
+                start_val = (start_val >= 1250) ? (start_val - 1250) : (SysTick->LOAD - (1250 - start_val) + 1);
 
-        }
+                // --- History Update (Strictly once per 38400 samples, precisely 1 second) ---
+                if (++gSondeApp.history_sample_acc >= 38400) {
+                    gSondeApp.history_sample_acc = 0;
+                    gSondeApp.history[gSondeApp.history_ptr] = (uint8_t)gSondeApp.pending_history;
+                    gSondeApp.history_ptr = (gSondeApp.history_ptr + 1) % 10;
+                    gSondeApp.pending_history = '.'; // Reset for next second
+                }
+            } // End of bit-recovery loop
 
             // Restore ADC for battery measurement
             SARADC_CFG = (SARADC_CFG & ~SARADC_CFG_CH_SEL_MASK) | 
                          (((ADC_CH4 | ADC_CH9) << SARADC_CFG_CH_SEL_SHIFT) & SARADC_CFG_CH_SEL_MASK);
                          
-            // Save p2p for UI
+            // Update timeout counters and latch successful decodes
+            if (frame_decoded) {
+                gSondeApp.timeout_frames = 0;
+                // Mark success for history latch
+                gSondeApp.pending_history = (gSondeApp.decoder.data.lat_1e6 != 0) ? '|' : '-';
+                
+                // Auto-switch to Monitor if we have valid coordinates and are currently looking at Diagnostics
+                if (gSondeApp.mode == SONDE_MODE_DIAGNOSTIC && gSondeApp.decoder.data.valid) {
+                    gSondeApp.mode = SONDE_MODE_MONITOR;
+                }
+            } else {
+                gSondeApp.timeout_frames++;
+                
+                // Auto-switch back to Diagnostics if signal is lost for 30 seconds
+                if (gSondeApp.timeout_frames > 30 && gSondeApp.mode == SONDE_MODE_MONITOR) {
+                    gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
+                }
+            }
+                         
+            // Calculate and filter Peak-to-Peak amplitude
             gSondeApp.last_adc_p2p = (local_max > local_min) ? (local_max - local_min) : 0;
+            if (gSondeApp.p2p_avg == 0) {
+                gSondeApp.p2p_avg = gSondeApp.last_adc_p2p;
+            } else {
+                gSondeApp.p2p_avg = (gSondeApp.p2p_avg * 7 + gSondeApp.last_adc_p2p) >> 3;
+            }
+
+            // --- Software AGC / Manual Gain ---
+            if (++gSondeApp.agc_counter >= 10) {
+                gSondeApp.agc_counter = 0;
+                
+                uint16_t reg_48 = BK4819_ReadRegister(0x48);
+                uint8_t current_gain = reg_48 & 0x7F;
+                bool changed = false;
+                
+                if (gSondeApp.gain_mode == 0) {
+                    // Auto Gain Mode
+                    if (gSondeApp.last_rssi > 500) {
+                        // Target P2P range: 1200 - 2400
+                        if (gSondeApp.p2p_avg < 1200 && current_gain < 120) {
+                            current_gain += 2;
+                            changed = true;
+                        } else if (gSondeApp.p2p_avg > 2800 && current_gain > 5) {
+                            current_gain -= 4;
+                            changed = true;
+                        }
+                    } else {
+                        // No signal? Reset to a safe baseline gain (60)
+                        if (current_gain != 60) {
+                            current_gain = 60;
+                            changed = true;
+                        }
+                    }
+                } else {
+                    // Manual Gain Mode
+                    // 1: LOW (20), 2: MID (60), 3: HIGH (100), 4: MAX (127)
+                    uint8_t target_gain = (gSondeApp.gain_mode == 1) ? 20 :
+                                          (gSondeApp.gain_mode == 2) ? 60 : 
+                                          (gSondeApp.gain_mode == 3) ? 100 : 127;
+                    if (current_gain != target_gain) {
+                        current_gain = target_gain;
+                        changed = true;
+                    }
+                }
+                
+                if (changed) {
+                    reg_48 = (reg_48 & ~0x007F) | current_gain;
+                    BK4819_WriteRegister(0x48, reg_48);
+                }
+            }
+
         } else {
-            // Lock QR code, do not run DPLL to decode new data
+            // QR Mode: Pause processing, just wait and render
             SYSTEM_DelayMs(100);
         }
 
-        // Update display on every cycle (since the DPLL loop takes 200ms to 1000ms anyway)
+        // Update display with latest metrics
         gSondeApp.last_rssi = BK4819_GetRSSI();
         Sonde_Render();
         BACKLIGHT_TurnOn();
-    }
+    } // End of main loop
 
-    // Cleanup: restore normal radio operation
+    // ============================================================
+    // Cleanup and hardware restoration on exit
+    // ============================================================
+    
     AUDIO_AudioPathOff();
-    BK4819_ToggleGpioOut(BK4819_GPIO0_PIN28_RX_ENABLE, false);
+    
+    // Restore ADC multiplexer
+    SARADC_CFG = (SARADC_CFG & ~SARADC_CFG_CH_SEL_MASK) | 
+                 (((ADC_CH4 | ADC_CH9) << SARADC_CFG_CH_SEL_SHIFT) & SARADC_CFG_CH_SEL_MASK);
 
-    // Reconfigure VFOs for normal operation
+    // Restore PA8 (UART1_RX)
+    PORTCON_PORTA_SEL1 &= ~PORTCON_PORTA_SEL1_A8_MASK;
+    PORTCON_PORTA_PU &= ~PORTCON_PORTA_PU_A8_MASK;
+    PORTCON_PORTA_PD &= ~PORTCON_PORTA_PD_A8_MASK;
+    
+    // Reset BK4819 to normal mode
+    BK4819_Init();
     RADIO_SetupRegisters(true);
+
+    // Clear display and return to main UI seamlessly
+    ST7565_FillScreen(0);
+    GUI_SelectNextDisplay(DISPLAY_MAIN);
 }
