@@ -63,6 +63,7 @@ functions:
 * **AM fix**
 * **SSB demodulation**
 
+> ⚠️ **Important Note for Radiosonde Firmware:** To free up ROM/Flash memory for the complex RS41 decoder, secondary features such as **FM Radio, Spectrum Analyzer, MDC1200, SMS, Doppler, and SI4732** have been **disabled** in this build.
 
 # Operating Instructions (Mandatory Reading!!)
 
@@ -86,7 +87,7 @@ functions:
 | **Long Press `6`/`F+6`** | Switch transmit power                                                                                                                                    |
 | **Long Press `7`/`F+7`** | Voice-activated transmission switch                                                                                                                      |
 | **Long Press `8`/`F+8`** | One-touch reverse frequency                                                                                                                              |
-| **Long Press `9`/`F+9`** | One-touch call                                                                                                                                           |
+| **Long Press `9`/`F+9`** | **Open RS41 Radiosonde Decoder** (Replaces One-touch call)                                                                                                                                           |
 | **`F+M`** | Open SMS                                                                                                                                                 |
 | **`F+UP`** | Key tone switch                                                                                                                                          |
 | **`F+Down`** | Automatic Doppler shift                                                                                                                                  |

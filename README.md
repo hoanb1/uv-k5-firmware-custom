@@ -64,6 +64,8 @@
 * **AM 修复**
 * **SSB 解调**
 
+> ⚠️ **Lưu ý cho phiên bản Radiosonde:** Để giải phóng bộ nhớ (Flash/ROM) cho module giải mã tín hiệu thám không RS41, các tính năng phụ như **FM Radio, Spectrum (Phổ), MDC1200, SMS, Doppler và SI4732** đã bị **vô hiệu hóa** trong bản build này.
+
 # 操作说明(必读！！)
 
 | 按键                         | 功能                                                   |
@@ -86,7 +88,7 @@
 | **长按`6`/`F+6`**            | 切换发射功率                                               |
 | **长按`7`/`F+7`**            | 声控发射开关                                               |
 | **长按`8`/`F+8`**            | 一键倒频                                                 |
-| **长按`9`/`F+9`**            | 一键即呼                                                 |
+| **长按`9`/`F+9`**            | **Mở bộ giải mã Radiosonde RS41** (thay cho Gọi một chạm) |
 | **`F+M`**                  | 打开短信                                                 |
 | **`F+UP`**                 | 按键音开关                                                |
 | **`F+Down`**               | 自动多普勒                                                |
