@@ -14,7 +14,6 @@
  *     limitations under the License.
  */
 #include "app/mdc1200.h"
-#include "chinese.h"
 #include <string.h>
 #include <stdlib.h>  // abs()
 #include "driver/uart.h"
@@ -54,12 +53,12 @@ const int8_t dBmCorrTable[7] = {
 
 const char *VfoStateStr[] = {
         [VFO_STATE_NORMAL]="",
-        [VFO_STATE_BUSY]=遇忙,
-        [VFO_STATE_BAT_LOW]=低电压,
-        [VFO_STATE_TX_DISABLE]=禁止发射,
-        [VFO_STATE_TIMEOUT]=发送超时,
+        [VFO_STATE_BUSY]="BUSY",
+        [VFO_STATE_BAT_LOW]="LOW VOL",
+        [VFO_STATE_TX_DISABLE]="DISABLE",
+        [VFO_STATE_TIMEOUT]="TxTOut",
         [VFO_STATE_ALARM]="ALARM",
-        [VFO_STATE_VOLTAGE_HIGH]=高电压
+        [VFO_STATE_VOLTAGE_HIGH]="HIGH VOL"
 };
 // ***************************************************************************
 
@@ -328,8 +327,8 @@ void UI_DisplayMain(void) {
     UI_DisplayClear();
 
     if (gLowBattery && !gLowBatteryConfirmed) {
-        //低电压
-        UI_DisplayPopup(低电压);
+        //"LOW VOL"
+        UI_DisplayPopup("LOW VOL");
         ST7565_BlitFullScreen();
         return;
     }
@@ -698,13 +697,13 @@ void UI_DisplayMain(void) {
                 s = gModulationStr[mod];
                 break;
         }
-        UI_PrintStringSmall(s, LCD_WIDTH + 24, 0, line + 1); //中文信道1
+        UI_PrintStringSmall(s, LCD_WIDTH + 24, 0, line + 1); 
         if (state == VFO_STATE_NORMAL || state == VFO_STATE_ALARM) {    // show the TX power
 
             const char pwr_list[][2] = {"L", "M", "H"};
             const unsigned int i = vfoInfo->OUTPUT_POWER % 3;
 
-            UI_PrintStringSmall(pwr_list[i], LCD_WIDTH + 46, 0, line + 1); //中文信道1
+            UI_PrintStringSmall(pwr_list[i], LCD_WIDTH + 46, 0, line + 1); 
         }
 
         if (vfoInfo->freq_config_RX.Frequency !=
@@ -712,13 +711,13 @@ void UI_DisplayMain(void) {
             const char dir_list[][2] = {"", "+", "-"};
             const unsigned int i = vfoInfo->TX_OFFSET_FREQUENCY_DIRECTION % 3;
 
-            UI_PrintStringSmall(dir_list[i], LCD_WIDTH + 54, 0, line + 1);//中文信道1
+            UI_PrintStringSmall(dir_list[i], LCD_WIDTH + 54, 0, line + 1);
         }
 
         // show the TX/RX reverse symbol
         if (vfoInfo->FrequencyReverse) {
             char *flag = vfoInfo->FrequencyReverse == 1 ? "R" : "T";
-            UI_PrintStringSmall(flag, LCD_WIDTH + 62, 0, line + 1);//中文信道1
+            UI_PrintStringSmall(flag, LCD_WIDTH + 62, 0, line + 1);
         }
         {
             // show the narrow band symbol
@@ -729,13 +728,13 @@ void UI_DisplayMain(void) {
 #ifdef ENABLE_DTMF_CALLING
         // show the DTMF decoding symbol
         if (vfoInfo->DTMF_DECODING_ENABLE || gSetting_KILLED) {
-            UI_PrintStringSmall("DTMF", LCD_WIDTH + 78, 0, line + 1);//中文信道1
+            UI_PrintStringSmall("DTMF", LCD_WIDTH + 78, 0, line + 1);
         }
 
 #endif
         // show the audio scramble symbol
         if (vfoInfo->SCRAMBLING_TYPE > 0/* && gSetting_ScrambleEnable*/) {
-            UI_PrintStringSmall("ENC", LCD_WIDTH + 106, 0, line + 1);//中文信道1
+            UI_PrintStringSmall("ENC", LCD_WIDTH + 106, 0, line + 1);
         }
     }
 #ifdef ENABLE_AGC_SHOW_DATA

@@ -8,7 +8,7 @@ void TIM0_INIT() {
     TIMERBASE0_DIV = 4800;
     TIMERBASE0_LOW_LOAD = 10000; //1s
     NVIC_SetPriority(Interrupt5_IRQn, 0); /* set Priority for Systick Interrupt */
-    TIMERBASE0_IF |= 0x01; // 写1清零 清除定时器中断状态
+    TIMERBASE0_IF |= 0x01; 
     TIMERBASE0_IE |= 0x01;
     TIMERBASE0_EN |= 0x01;
     NVIC_EnableIRQ(Interrupt5_IRQn);

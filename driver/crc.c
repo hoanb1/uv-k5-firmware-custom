@@ -36,15 +36,15 @@ void CRC_Init(void) {
 
 uint16_t CRC_Calculate1(void *pBuffer, uint16_t Size) {
     uint8_t *pData = (uint8_t *) pBuffer;
-    uint16_t crc = 0; // 初始CRC值为0
+    uint16_t crc = 0; 
 
     while (Size--) {
-        crc ^= (*pData++) << 8; // 将数据字节的最高位与CRC异或
+        crc ^= (*pData++) << 8; 
         for (uint8_t i = 0; i < 8; i++) {
-            if (crc & 0x8000) { // 检查最高位是否为1
-                crc = (crc << 1) ^ CRC16_XMODEM_POLY; // 如果最高位为1，执行CRC多项式计算
+            if (crc & 0x8000) { 
+                crc = (crc << 1) ^ CRC16_XMODEM_POLY; 
             } else {
-                crc = crc << 1; // 如果最高位为0，继续左移
+                crc = crc << 1; 
             }
         }
     }

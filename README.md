@@ -2,245 +2,249 @@
 
 **语言版本: [English](./README_en.md), [中文](./README.md).**
 
-
 # [K5Web]( https://k5.vicicode.com/)
-* 支持在线固件功能编译，无需安装编译环境！！
-* 多普勒卫星、开机图片文字、SI4732 SSB补丁的写频方式！
-* 支持**创意工坊**，注册后登录可上传自定义固件和开机图片！！！
+* Supports online firmware functionality compilation, no need to install the compilation environment!!
+* Doppler satellite, boot image text, SI4732 SSB patch frequency writing method!
+* Supports **Workshop**, register and log in to upload custom firmware and boot images!!!
 
-请访问：[K5Web]( https://k5.vicicode.com/)
+Please visit: [K5Web]( https://k5.vicicode.com/)
 
-# [自定义引导](https://github.com/losehu/uv-k5-bootloader-custom)
-* 通过创立一个引导程序加载进RAM实现固件切换
-* 可切换任意固件
-* 目前仅适用于4Mib的EEPROM，通过修改代码可轻松拓展至其他大小EEPROM
+# [Custom Bootloader](https://github.com/losehu/uv-k5-bootloader-custom)
+* Achieves firmware switching by creating a bootloader loaded into RAM
+* Can switch any firmware
+* Currently only applicable to 4Mib EEPROM, can be easily expanded to other EEPROM sizes by modifying the code
   
-# [独立的多普勒卫星固件](https://github.com/losehu/uv-k5-firmware-custom/tree/doppler)
-* 可以独立解算最多40个卫星的角度，高度，速度，距离，频偏
-* 需要扩容2Mit及以上的EEprom
-* 可以显示卫星位置，带方位图
+# [Standalone Doppler Satellite Firmware](https://github.com/losehu/uv-k5-firmware-custom/tree/doppler)
+* Can independently calculate up to 40 satellites’ angles, altitudes, speeds, distances, and frequency offsets
+* Requires expansion of 2Mit or larger EEPROM
+* Can display satellite positions with azimuth map
+  
+# [Larger Firmware System](https://github.com/losehu/uv-k5-system-custom/)
+* Allows UVK5 to load firmware larger than 64KB, up to 512MB
+* A larger firmware can implement all functions in a single firmware!!!
+* In development... Stay tuned
 
-# [更大固件系统](https://github.com/losehu/uv-k5-system-custom/)
-* 可以让UVK5加载超过64KB大小的固件，最高512MB
-* 更大的固件可以在一个固件中实现所有功能！！！
-* 开发中。。。敬请期待
+# Version Description
 
-# 版本说明
-
-* 目前分为如下几个版本：**LOSEHUxxx**、**LOSEHUxxxK**、**LOSEHUxxxH**、**LOSEHUxxxE**、**LOSEHUxxxEK**、**LOSEHUxxxHS**
+* The current versions are: **LOSEHUxxx**, **LOSEHUxxxK**, **LOSEHUxxxH**, **LOSEHUxxxE**, **LOSEHUxxxEK**, **LOSEHUxxxHS**
 * 
-| 版本         | 语言 | EEPROM 需求 | MDC1200 | 多普勒模式 | 频谱 | 收音机 | 中文信道名 | 自定义开机中文字符 | 开机图片 | 中文输入法 | 短信 |
-|--------------|------|-------------|---------|------------|------|--------|------------|--------------------|----------|------------|------|
-| LOSEHUxxx    | 中文 | 无需扩容    | ✅      | ❌         | ✅   | ✅     | ❌         | ❌                 | ❌       | ❌         | ❌   |
-| LOSEHUxxxK   | 中文 | 1Mib 以上   | ✅      | ✅         | ✅   | ✅     | ✅         | ✅                 | ✅       | ❌         | ❌   |
-| LOSEHUxxxH   | 中文 | 2Mib 以上   | ✅      | ✅         | ✅   | ✅     | ✅         | ✅                 | ✅       | ✅         | ❌   |
-| LOSEHUxxxHS  | 中文 | 2Mib 以上   | ❌      | ❌         | ✅   | ✅     | ✅         | ✅                 | ✅       | ✅         | ❌   |
-| LOSEHUxxxE   | 英文 | 无需扩容    | ✅      | ❌         | ✅   | ✅     | ❌         | ❌                 | ❌       | ❌         | ✅   |
-| LOSEHUxxxEK  | 英文 | 1Mib 以上   | ✅      | ✅         | ✅   | ✅     | ❌         | ✅                 | ✅       | ❌         | ❌   |
+| Version       | Language | EEPROM Requirement | MDC1200 | Doppler Mode | Spectrum | Radio | Chinese Channel Name | Custom Boot Image | Boot Image | Chinese Input Method | SMS |
+|---------------|----------|---------------------|---------|--------------|----------|-------|----------------------|-------------------|------------|----------------------|-----|
+| LOSEHUxxx     | Chinese | No expansion needed  | ✅      | ❌           | ✅       | ✅    | ❌                   | ❌                | ❌         | ❌                   | ❌  |
+| LOSEHUxxxK    | Chinese | 1Mib or above       | ✅      | ✅           | ✅       | ✅    | ✅                   | ✅                | ✅         | ❌                   | ❌  |
+| LOSEHUxxxH    | Chinese | 2Mib or above       | ✅      | ✅           | ✅       | ✅    | ✅                   | ✅                | ✅         | ✅                   | ❌  |
+| LOSEHUxxxHS   | Chinese | 2Mib or above       | ❌      | ❌           | ✅       | ✅    | ✅                   | ✅                | ✅         | ✅                   | ❌  |
+| LOSEHUxxxE    | English | No expansion needed  | ✅      | ❌           | ✅       | ✅    | ❌                   | ❌                | ❌         | ❌                   | ✅  |
+| LOSEHUxxxEK   | English | 1Mib or above       | ✅      | ✅           | ✅       | ✅    | ❌                   | ✅                | ✅         | ❌                   | ❌  |
 
-### 说明：
-- ✅ 表示支持该功能
-- ❌ 表示不支持该功能
-- 表格中的“收音机”功能在 LOSEHUxxxHS 版本中特指 SI4732 收音机
+### Explanation:
+- ✅ means the feature is supported
+- ❌ means the feature is not supported
+- The "Radio" feature in the LOSEHUxxxHS version specifically refers to the SI4732 radio
 
-# 多功能的K5/6固件
+# Multi-functional K5/6 Firmware
 
-该固件基于多个开源固件修改合并，拥有最多样性的功能
+This firmware is based on modifications and merges of multiple open-source firmware, featuring the most diverse
+functions:
+* **Larger EEPROM capacity**
+* **Automatic Doppler frequency shift**
+* Custom boot logo
+* **Radiosonde RS41 Decoder** ([Detailed Hardware & Usage Guide](doc/RADIOSONDE.md))
+* **SI4732 support**
+* **Chinese/English support**
+* **Chinese input method**
+* **GB2312 Chinese interface, channels**
+* **Spectrum graph**
+* **MDC1200 signaling, contacts**
+* **SMS**
+* **Signal strength indicator (S meter)**
+* **One-touch frequency scanning**
+* **Radio receiver**
+* **AM fix**
+* **SSB demodulation**
 
-* **更大容量的Eeprom芯片**
-* **自动多普勒频移**
-* **自定义开机图**
-* **Radiosonde RS41 Decoder** ([Hướng dẫn Cài đặt & Sử dụng chi tiết](doc/RADIOSONDE.md))
-* **SI4732支持**
-* **中/英文支持**
-* **中文输入法**
-* **GB2312中文界面、信道**
-* **频谱图**
-* **MDC1200信令、联系人**
-* **短信**
-* **信号强度指示器（ S表 ）**
-* **一键扫频**
-* **收音机**
-* **AM 修复**
-* **SSB 解调**
-
-> ⚠️ **Lưu ý về bộ nhớ (ROM):** Vi điều khiển chỉ có 64KB Flash nên không thể bật tất cả các tính năng cùng lúc. Để sử dụng **Radiosonde RS41**, bạn buộc phải tắt bớt các tính năng khác để nhường chỗ trống.
+> ⚠️ **Memory (ROM) Limitation Note:** The MCU has only 64KB of Flash memory, so it is impossible to enable all features simultaneously. To use the **Radiosonde RS41 decoder**, you must disable other features to free up space.
 > 
-> Ví dụ, nếu bạn muốn dùng **RS41 kèm với SI4732 và SSB**, bạn có thể tự biên dịch với lệnh sau (lệnh này sẽ tự động tắt các tính năng cơ bản không cần thiết như DTMF, Flashlight, VOX, UART để tiết kiệm bộ nhớ):
+> For example, if you want to use **RS41 alongside SI4732 and SSB**, you can compile the firmware with the following command (which automatically disables non-critical features like UART, DTMF, VOX, and Flashlight):
 > ```bash
-> make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1 ENABLE_ENGLISH=1 
+> make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1 ENABLE_ENGLISH=1
 > ```
 
-# 操作说明(必读！！)
+# Operating Instructions (Mandatory Reading!!)
 
-| 按键                         | 功能                                                   |
-|----------------------------|------------------------------------------------------|
-| 🐤 **主界面下**                |                                                      |
-| **单按`上/下`**                | 调整频率（步长为菜单1项`步进频率`）                                  |
-| **单按`数字`**                 | 在频率模式下快捷输入频率                                         |
-| **单按`*`**                  | 输入要发送的DTMF(`A、B、C、D、*、#`对应`M、上、下、*、F`键侧键1退格,按PPT键发送) |
-| **长按`F`**                  | 锁定键盘                                                 |
-| **长按`M`**                  | 切换调制模式                                               |
-| **长按`*`**                  | 信道模式下是搜索列表,多次长按可切换(列表1/2/全部)，频率模式下,从当前频率开始搜索         |
-| **长按`0`/`F+0`**            | 打开/关闭收音机(或SI4732)                                    |
-| **长按`1`/`F+1`**            | 在信道模式下将当前信道复制到另一个VFO                                 |
-| **长按`2`/`F+2`**            | 切换A/B通道                                              |
-| **长按`3`/`F+3`**            | 切换频率/信道                                              |
-| **长按`4`/`F+4`**            | 一键对频                                                 |
-| **长按`5`**                  | 信道模式下切换搜索列表                                          |
-| **长按`5`**                  | 频率模式下设置搜索频率范围(从通道A到通道B频率),按*键开始搜索                    |
-| **`F+5`**                  | 频谱                                                   |
-| **长按`6`/`F+6`**            | 切换发射功率                                               |
-| **长按`7`/`F+7`**            | 声控发射开关                                               |
-| **长按`8`/`F+8`**            | 一键倒频                                                 |
-| **长按`9`/`F+9`**            | **Mở bộ giải mã Radiosonde RS41** (thay cho Gọi một chạm) |
-| **`F+M`**                  | 打开短信                                                 |
-| **`F+UP`**                 | 按键音开关                                                |
-| **`F+Down`**               | 自动多普勒                                                |
-| **`F+EXIT`**               | 菜单上下颠倒                                               |
-| **`F+*`**                  | 扫描(数字/模拟)亚音                                          |
-| **短按`侧键1`**                | 监听                                                   |
-| **长按`侧键1`**                | DTMF解码开关                                             |
-| **短按`侧键2`**                | 设置宽窄带                                                |
-| **长按`侧键2`**                | 手电筒                                                  |
-| **宽窄带、DTMF解码、切换FM/AM/USB** | 集成至自定义的 **侧键与M**                                     |
-| 🎤 **SI4732收音机**           |                                                      |
-| **短按`侧键1`、短按`侧键2`**        |      SSB模式下更改bfo                                                 |
-| **短按`5`**                  | 输入频率，**短按`*`** 小数点 , **短按`MENU`** 确认                 |
-| **短按`0`**                  | 切换模式(AM/FM/SSB)，**短按`F`** 切换LSB/USB                  |
-| **短按`1`**、**短按`7`**        | 切换步进频率                                               |
-| **短按`4`**                  | 切换显示信号强度                                             |
-| **短按`6`**                  | 切换带宽                                                 |
-| **短按`2`**、**短按`8`**        | 切换ATT                                                |
-| **短按`3`**、**短按`9`**        |     上下搜索 ，**短按`EXIT`** 停止搜索                                       |
-| 🔑 **多普勒模式**               |                                                      |
-| **短按`5`**                  | 输入时间，**短按`*`** 小数点 , **短按`MENU`** 确认                 |
-| **短按`MENU`**               | 切换参数，上下调节                                            |
-| **短按`PPT`**                | 发射                                                   |
-| **短按`侧键1`**                | 开启监听                                                 |
+| Key              | Function                                                                                                                                                 |
+|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 🐤 **Main Interface** |                                                                                                                                                          |
+| **Single Press `Up/Down`** | Adjust frequency (step size is set by menu item `Step Frequency`)                                                                                        |
+| **Single Press `Number`** | Quickly input frequency in frequency mode                                                                                                                |
+| **Single Press `*`** | Input DTMF to be sent (`A, B, C, D, *, #` correspond to `M, Up, Down, *, F` respectively. Side Key 1 acts as backspace, press PTT key to send)           |
+| **Long Press `F`** | Keyboard Lock                                                                                                                                            |
+| **Long Press `M`** | Switch modulation mode                                                                                                                                   |
+| **Long Press `*`** | In channel mode, activates search list, multiple long presses toggle between lists (1/2/All). In frequency mode, initiates search from current frequency |
+| **Long Press `0`/`F+0`** | Open/Close radio receiver(OR SI4732)                                                                                                                     |
+| **Long Press `1`/`F+1`** | In channel mode, copies current channel to another VFO                                                                                                   |
+| **Long Press `2`/`F+2`** | Switch between A/B channels                                                                                                                              |
+| **Long Press `3`/`F+3`** | Switch between frequency/channel                                                                                                                         |
+| **Long Press `4`/`F+4`** | One-touch frequency alignment                                                                                                                            |
+| **Long Press `5`** | In channel mode, toggles search list                                                                                                                     |
+| **Long Press `5`** | In frequency mode, sets search frequency range (from channel A to channel B frequency), press * key to start search                                      |
+| **`F+5`** | Spectrum                                                                                                                                                 |
+| **Long Press `6`/`F+6`** | Switch transmit power                                                                                                                                    |
+| **Long Press `7`/`F+7`** | Voice-activated transmission switch                                                                                                                      |
+| **Long Press `8`/`F+8`** | One-touch reverse frequency                                                                                                                              |
+| **Long Press `9`/`F+9`** | **Open RS41 Radiosonde Decoder** (Replaces One-touch call)                                                                                                                                           |
+| **`F+M`** | Open SMS                                                                                                                                                 |
+| **`F+UP`** | Key tone switch                                                                                                                                          |
+| **`F+Down`** | Automatic Doppler shift                                                                                                                                  |
+| **`F+EXIT`** | Inverts menu navigation (Up/Down)                                                                                                                        |
+| **`F+*`** | Scan (Digital/Analog) sub-audio                                                                                                                          |
+| **Short Press Side Key 1** | Monitor                                                                                                                                                  |
+| **Long Press Side Key 1** | DTMF decoding switch                                                                                                                                     |
+| **Short Press Side Key 2** | Set wide/narrow band                                                                                                                                     |
+| **Long Press Side Key 2** | Flashlight                                                                                                                                               |
+|**Wide/Narrow Band, DTMF decoding, FM/AM/USB Switching**| Integrated into custom **Side Key and M**                                                                                                                |
+| 🎤 **SI4732 Radio**          |                                                      |
+| **Short press `Side Key 1`, Short press `Side Key 2`** | Change BFO in SSB mode                                      |
+| **Short press `5`**                  | Enter frequency, **short press `*`** for decimal point, **short press `MENU`** to confirm                 |
+| **Short press `0`**                  | Switch mode (AM/FM/SSB), **short press `F`** to switch LSB/USB                  |
+| **Short press `1`, Short press `7`**        | Change step frequency                                               |
+| **Short press `4`**                  | Toggle signal strength display                                             |
+| **Short press `6`**                  | Change bandwidth                                                 |
+| **Short press `2`, Short press `8`**        | Toggle ATT                                                |
+| **Short press `3`, Short press `9`**        | Search up/down, **short press `EXIT`** to stop search                                       |
+| 🔑 **Doppler Mode**               |                                                      |
+| **Short press `5`**                  | Enter time, **short press `*`** for decimal point, **short press `MENU`** to confirm                 |
+| **Short press `MENU`**               | Toggle parameters, adjust up/down                                            |
+| **Short press `PPT`**                | Transmit                                                   |
+| **Short press `Side Key 1`**                | Enable listening                                                 |
+                                                                                                                           |
+# Eeprom Layout Explanation
 
+| Eeprom Address                          | Description                                                                                                                                             |
+|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 😭 **General**                          | Version: LOSEHUxxx                                                                                                                                      |
+| 0X01D00~0x02000                        | Rarely changed                                                                                                                                          |
+| 0X01D00 ~ 0X01E00<br/>0X1F90 ~ 0X01FF0 | **MDC1200** - 22 MDC contacts<br/>Each contact occupies 16B, with the first 2B being MDC ID and the next 14B being contact name                         |
+| 0X01FFF                                | **MDC1200** - Number of MDC contacts                                                                                                                    |
+| 0x01FFD~0x01FFE                        | **MDC1200** - MDC ID                                                                                                                                    |
+| 0x01FF8~0x01FFC                        | Side key functions                                                                                                                                      |
+| 0x01FFD~0x01FFE                        | **MDC1200** - MDC ID                                                                                                                                    |
+| 😱 **Expanded Version (K, H)**          | Version: LOSEHUxxxK, LOSEHUxxxH                                                                                                                         |
+| 0x02000~0x02012                        | Boot character 1                                                                                                                                        |
+| 0x02012~0x02024                        | Boot character 2                                                                                                                                        |
+| 0x02024~0x02025                        | Length of boot characters 1 and 2                                                                                                                       |
+| 0x02080~0x02480                        | Boot screen, length 128 (width) * 64/8 = 1024 = 0x400                                                                                                   |
+| 0x01FFD~0x01FFE                        | **MDC1200** - MDC ID                                                                                                                                    |
+| 0x02480~0x0255C                        | gFontBigDigits, length 11 * 20 = 220 = 0XDC                                                                                                             |
+| 0x0255C~0x0267C                        | gFont3x5, length 96 * 3 = 288 = 0X120                                                                                                                   |
+| 0x0267C~0x028B0                        | gFontSmall, length 96 * 6 = 564 = 0X234                                                                                                                 |
+| 0x028B0~0x02B96                        | Menu encoding, length 53 * 14 = 742 = 0X2E6                                                                                                             |
+| 0x02BA0~0x02BA9                        | **Doppler** - Satellite names, with the first character first, up to 9 English characters, the last one being '\0'                                      |
+| 0x02BAA~0x02BAF                        | **Doppler** - Year (tens and units), month, day, hour, minute, and second of start transit time                                                         |
+| 0x02BB0~0x2BB5                         | **Doppler** - Year (tens and units), month, day, hour, minute, and second of departure time                                                             |
+| 0x02BB6~0x02BB7                        | **Doppler** - Total transit time (seconds), with the low byte first and the high byte second                                                            |
+| 0x02BB8~0x02BB9                        | **Doppler** - Transmitter sub-audio, with the low byte first and the high byte second                                                                   |
+| 0x02BBA~0x02BBB                        | **Doppler** - Receiver sub-audio, with the low byte first and the high byte second                                                                      |
+| 0x02C00~0x02C64                        | **Doppler** - CTCSS_Options, length 50 * 2 = 100 = 0x64                                                                                                 |
+| 0x02C64~0x02D34                        | **Doppler** - DCS_Options, length 104 * 2 = 208 = 0xD0                                                                                                  |
+| 0x02BBC~0X02BBF                        | **Doppler** - Difference between start transit time and UNIX timestamp of January 1, 2000, with the low byte first and the high byte second             |
+| 0X02BC0~0X02BC5                        | **Doppler** - Year (tens and units), month, day, hour, minute, and second of current time                                                               |
+| 0x02E00~0x1E1E6                        | GB2312 Chinese font library, total 6763 * 11 * 12/8 = 111590 = 0x1B3E6                                                                                  |
+| 0x1E200~0x20000(MAX)                   | **Doppler** - 2*n (even) second satellite data, 8B per second, including uplink/downlink frequency/10, with the low byte first and the high byte second |
+| 😰 **2Mib Expanded Version (H)**        | Version: LOSEHUxxxH                                                                                                                                     |
+| 0x20000~0x26B00                        | **Chinese Input Method** - Pinyin index, corresponding number of characters, starting address of characters                                             |
+| 0x26B00~0X2A330                        | **Chinese Input Method** - Pinyin Chinese character table                                                                                               |
+| 0x3C228~0x40000                        | **SI4732**-patch，Length 0x3DD8，used to update SI4732 firmware                                                                                           |
+| 0x3C210~0x3C21C                        | **SI4732**FM、AM、SSB Freq、Mode                                                                                                                           |
+[Doppler Eeprom Layout Explanation](https://github.com/losehu/uv-k5-firmware-chinese/blob/main/doc/多普勒eeprom详细说明.txt)
 
+# Examples
 
+<p float="left">
+  <img src="/images/c1.JPG" width=300 />
+  <img src="/images/c2.JPG" width=300 />
+  <img src="/images/c3.JPG" width=300 />
+  <img src="/images/c4.JPG" width=300 />
+</p>
 
-# EEPROM分布说明
+# User Function Customization
 
-| EEPROM地址                               | 描述                                                        |
-|----------------------------------------|-----------------------------------------------------------|
-| 😭 **通用**                              | 版本号：LOSEHUxxx                                             |
-| 0X01D00~0x02000                        | 基本不变                                                      |
-| 0X01D00 ~ 0X01E00<br/>0X1F90 ~ 0X01FF0 | **MDC1200**-22个MDC联系人<br/>每个联系人占用16B，前2B为MDC ID，后14B为联系人名 |
-| 0X01FFF                                | **MDC1200**-MDC联系人数量                                      |
-| 0x01FFD~0x01FFE                        | **MDC1200**-MDC ID                                        |
-| 0x01FF8~0x01FFC                        | 侧键功能                                                      |
-| 0x01FFD~0x01FFE                        | **MDC1200**-MDC ID                                        |
-| 😱 **扩容版(K、H)**                        | 版本号：LOSEHUxxxK、LOSEHUxxxH                                 |
-| 0x02000~0x02012                        | 开机字符1                                                     |
-| 0x02012~0x02024                        | 开机字符2                                                     |
-| 0x02024~0x02025                        | 开机字符1、2的长度                                                |
-| 0x02080~0x02480                        | 开机画面，长度128（宽）*64/8=1024=0x400                             |
-| 0x01FFD~0x01FFE                        | **MDC1200**-MDC ID                                        |
-| 0x02480~0x0255C                        | gFontBigDigits，长度11*20=220=0XDC                           |
-| 0x0255C~0x0267C                        | gFont3x5，长度96*3=288=0X120                                 |
-| 0x0267C~0x028B0                        | gFontSmall，长度96*6=564=0X234                               |
-| 0x028B0~0x02B96                        | 菜单编码，长度53*14=742=0X2E6                                    |
-| 0x02BA0~0x02BA9                        | **多普勒**-卫星名称,首字符在前,最多9个英文，最后一个为'\0'                       |
-| 0x02BAA~0x02BAF                        | **多普勒**-开始过境时间的年份十位个位、月、日、时、分、秒                           |
-| 0x02BB0~0x2BB5                         | **多普勒**-离境时间的年份十位个位、月、日、时、分、秒                             |
-| 0x02BB6~0x02BB7                        | **多普勒**-总过境时间（秒），低位在前，高位在后                                |
-| 0x02BB8~0x02BB9                        | **多普勒**-手台的发射亚音，低位在前，高位在后                                 |
-| 0x02BBA~0x02BBB                        | **多普勒**-手台的接收亚音，低位在前，高位在后                                 |
-| 0x02C00~0x02C64                        | **多普勒**-CTCSS_Options,长度50*2=100=0x64                     |
-| 0x02C64~0x02D34                        | **多普勒**-DCS_Options,长度104*2=208=0xD0                      |
-| 0x02BBC~0X02BBF                        | **多普勒**-开始过境时间与2000年1月1日UNIX时间戳的差,低位在前，高位在后               |
-| 0X02BC0~0X02BC5                        | **多普勒**-当前时间的年份十位个位、月、日、时、分、秒                             |
-| 0x02E00~0x1E1E6                        | GB2312中文字库,共6763*11*12/8=111590=0x1B3E6                   |
-| 0x1E200~0x20000(MAX)                   | **多普勒**-第2*n（偶数）秒卫星数据，每秒8B,包括上下行频率/10，低位在前，高位在后           |
-| 😰 **2Mib扩容版（H）**                      | 版本号：LOSEHUxxxH                                            |
-| 0x20000~0x26B00                        | **中文输入法**-拼音索引、对应字数、字的起始地址                                |
-| 0x26B00~0x2A330                        | **中文输入法**-拼音汉字表                                           |
-| 0x3C228~0x40000                        | **SI4732**-patch，长度为0x3DD8，用于SI4732的固件升级                  |
-| 0x3C210~0x3C21C                        | **SI4732**FM、AM、SSB频率、模式                                  |
-[多普勒EEPROM分布说明](https://github.com/losehu/uv-k5-firmware-chinese/blob/main/doc/多普勒eeprom详细说明.txt)
+You can customize the firmware by enabling/disabling various compilation options.
 
+| Compilation Option                     | Description                                                                                                                     |
+|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| 🧰 **Quansheng Basic Functions**       | [Quansheng Basic Functions](https://github.com/egzumer/uv-k5-firmware-custom)                                                   |
+| ENABLE_UART                            | UART, without this, you cannot configure the radio via PC!                                                                      |
+| ENABLE_AIRCOPY                         | AirCopy wireless copy                                                                                                           |
+| ENABLE_FMRADIO                         | FM radio function                                                                                                               |
+| ENABLE_NOAA                            | NOAA function (only useful in the US)                                                                                           |
+| ENABLE_VOICE                           | Voice broadcast                                                                                                                 |
+| ENABLE_VOX                             | VOX voice-controlled transmission                                                                                               |
+| ENABLE_ALARM                           | TX alarm                                                                                                                        |
+| ENABLE_PWRON_PASSWORD                  | Boot password                                                                                                                   |
+| ENABLE_DTMF_CALLING                    | DTMF dialing function, call initiation, call reception, group call, contact list, etc.                                          |
+| ENABLE_FLASHLIGHT                      | Enable top flashlight LED light (on, blink, SOS)                                                                                |
+| ⌚ **Custom Module**                    |                                                                                                                                 |
+| ENABLE_BIG_FREQ                        | Large font frequency display (similar to official Quansheng firmware)                                                           |
+| ENABLE_KEEP_MEM_NAME                   | Keep channel name when saving memory channel                                                                                    |
+| ENABLE_WIDE_RX                         | Receive full range from 18MHz to 1300MHz (although the front end/power amplifier is not designed for the entire range)          |
+| ENABLE_TX_WHEN_AM                      | Allow TX when RX is set to AM (always FM)                                                                                       |
+| ENABLE_F_CAL_MENU                      | Enable hidden frequency calibration menu for radio                                                                              |
+| ENABLE_CTCSS_TAIL_PHASE_SHIFT          | Use standard CTCSS tail phase shift instead of the unique QS 55Hz tone method                                                   |
+| ENABLE_BOOT_BEEPS                      | Provide audio feedback for users at startup, indicating the position of the volume knob                                         |
+| ENABLE_SHOW_CHARGE_LEVEL               | Display battery charge level while radio is charging                                                                            |
+| ENABLE_REVERSE_BAT_SYMBOL              | Mirror battery symbol in status bar (positive pole on right)                                                                    |
+| ENABLE_NO_CODE_SCAN_TIMEOUT            | Disable 32-second CTCSS/DCS scan timeout (exit button instead of waiting for timeout to end scan)                               |
+| ENABLE_AM_FIX                          | Dynamically adjust front-end gain in AM mode to help prevent AM demodulator saturation, temporarily ignore RSSI level on screen |
+| ENABLE_SQUELCH_MORE_SENSITIVE          | Slightly increase squelch sensitivity                                                                                           |
+| ENABLE_FASTER_CHANNEL_SCAN             | Increase channel scan speed, but also increase squelch sensitivity                                                              |
+| ENABLE_RSSI_BAR                        | Enable RSSI bar graph level in dBm/Sn units, instead of small antenna symbol                                                    |
+| ENABLE_AUDIO_BAR                       | Display audio bar level while transmitting                                                                                      |
+| ENABLE_COPY_CHAN_TO_VFO                | Copy current channel setting to frequency mode. Long press `1 BAND` in channel mode                                             |
+| ENABLE_SPECTRUM                        | Spectrum analyzer, activated by `F` + `5 NOAA`                                                                                  |
+| ENABLE_REDUCE_LOW_MID_TX_POWER         | Reduce mid and low power settings even lower                                                                                    |
+| ENABLE_BYP_RAW_DEMODULATORS            | Additional BYP (bypass?) and RAW demodulation options, proven not very useful, but available if you want to experiment          |
+| ENABLE_SCAN_RANGES                     | Scan range mode for frequency scanning                                                                                          |
+| ENABLE_BLOCK                           | EEPROM lock                                                                                                                     |
+| ENABLE_WARNING                         | Beep prompt                                                                                                                     |
+| ENABLE_CUSTOM_SIDEFUNCTIONS            | Custom side key function                                                                                                        |
+| ENABLE_SIDEFUNCTIONS_SEND              | Custom side key function (side key transmit function)                                                                           |
+| ENABLE_AUDIO_BAR_DEFAULT               | Default audio bar style                                                                                                         |
+| 📡 **Automatic Doppler**               | [Automatic Doppler](https://github.com/losehu/uv-k5-firmware-custom)                                                            |
+| ENABLE_DOPPLER                         | Automatic Doppler function                                                                                                      |
+| 📧 **SMS**                             | [SMS](https://github.com/joaquimorg/uv-k5-firmware-custom)                                                                      |
+| ENABLE_MESSENGER                       | Send and receive short text messages (button = `F` + `MENU`)                                                                    |
+| ENABLE_MESSENGER_DELIVERY_NOTIFICATION | Send notification to sender if message received                                                                                 |
+| ENABLE_MESSENGER_NOTIFICATION          | Play sound when message received                                                                                                |
+| 📱 **MDC1200**                         | [MDC1200](https://github.com/OneOfEleven/uv-k5-firmware-custom)                                                                 |
+| ENABLE_MDC1200                         | MDC1200 transmission function                                                                                                   |
+| ENABLE_MDC1200_SHOW_OP_ARG             | MDC display head/tail parameter                                                                                                 |
+| ENABLE_MDC1200_SIDE_BEEP               | MDC side tone                                                                                                                   |
+| ENABLE_MDC1200_CONTACT                 | MDC contact                                                                                                                     |
+| 🎛️ **DOCK**                           | [DOCK](https://github.com/nicsure/QuanshengDock)                                                                                |
+| ENABLE_DOCK                            | Allow control of the radio via PC, no screen display!                                                                           |
+| 🚫 **Debug**                           |                                                                                                                                 |
+| ENABLE_AM_FIX_SHOW_DATA                | Display debug data for AM fix                                                                                                   |
+| ENABLE_AGC_SHOW_DATA                   | Display ACG parameters                                                                                                          |
+| ENABLE_UART_RW_BK_REGS                 | Added two extra commands to read and write BK4819 registers                                                                     |
+| ⚠️ **Compilation Options**             |                                                                                                                                 |
+| ENABLE_CLANG                           | Experimental, build with clang instead of gcc (if this option is enabled, LTO will be disabled)                                 |
+| ENABLE_SWD                             | Use the CPU's SWD port, required for debugging/programming                                                                      |
+| ENABLE_OVERLAY                         | CPU FLASH-related content, not needed                                                                                           |
+| ENABLE_LTO                             | Reduce the size of the compiled firmware, but may break EEPROM reading (OVERLAY will be disabled after enabling)                |
 
-# 用户功能自定义
+# Donations
 
-你可以通过启用/禁用各种编译选项来定制固件
+If this project has been helpful to you, consider sponsoring to support development work.
 
-| 编译选项                                   | 描述                                                                            |
-|----------------------------------------|-------------------------------------------------------------------------------|
-| 🧰 **泉盛基本功能**                          | [Quansheng Basic Functions](https://github.com/egzumer/uv-k5-firmware-custom) |
-| ENABLE_UART                            | 串口，没有这个,你就不能通过PC配置无线电！                                                        |
-| ENABLE_AIRCOPY                         | AirCopy无线复制                                                                   |
-| ENABLE_FMRADIO                         | 收音机功能                                                                         |
-| ENABLE_NOAA                            | NOAA功能 (只有在美国有用)                                                              |
-| ENABLE_VOICE                           | 语音播报                                                                          |
-| ENABLE_VOX                             | VOX声控发射                                                                       |
-| ENABLE_ALARM                           | TX 警报                                                                         |
-| ENABLE_PWRON_PASSWORD                  | 开机密码                                                                          |
-| ENABLE_DTMF_CALLING                    | DTMF拨号功能，呼叫发起，呼叫接收，群组通话，联系人列表等                                                |
-| ENABLE_FLASHLIGHT                      | 启用顶部手电筒LED灯（开启，闪烁，SOS）                                                        |
-| ⌚ **自定义模组**                            |                                                                               |
-| ENABLE_BIG_FREQ                        | 大号字体的频率显示（类似官方泉盛固件）                                                           |
-| ENABLE_KEEP_MEM_NAME                   | 在重新保存内存频道时保持频道名称                                                              |
-| ENABLE_WIDE_RX                         | 全频18MHz至1300MHz接收（尽管前端/功率放大器未设计用于整个范围）                                        |
-| ENABLE_TX_WHEN_AM                      | 当RX设置为AM时允许TX（始终为FM）                                                          |
-| ENABLE_F_CAL_MENU                      | 启用收音机的隐藏频率校准菜单                                                                |
-| ENABLE_CTCSS_TAIL_PHASE_SHIFT          | 使用标准CTCSS尾部相移，而不是QS独有的55Hz音调方法                                                |
-| ENABLE_BOOT_BEEPS                      | 在启动时为用户提供音频反馈，指示音量旋钮的位置                                                       |
-| ENABLE_SHOW_CHARGE_LEVEL               | 在收音机充电时显示电池充电水平                                                               |
-| ENABLE_REVERSE_BAT_SYMBOL              | 在状态栏上镜像电池符号（正极在右侧）                                                            |
-| ENABLE_NO_CODE_SCAN_TIMEOUT            | 禁用32秒CTCSS/DCS扫描超时（按退出按钮而不是等待超时结束扫描                                           |
-| ENABLE_AM_FIX                          | 在AM模式下动态调整前端增益，以帮助防止AM解调器饱和，暂时忽略屏幕上的RSSI级别                                    |
-| ENABLE_SQUELCH_MORE_SENSITIVE          | 将静噪电平稍微调敏感一些                                                                  |
-| ENABLE_FASTER_CHANNEL_SCAN             | 增加频道扫描速度，但静噪调敏度也增加了                                                           |
-| ENABLE_RSSI_BAR                        | 启用以dBm/Sn为单位的RSSI条形图水平，取代小天线符号                                                |
-| ENABLE_AUDIO_BAR                       | 发送时显示音频条级别                                                                    |
-| ENABLE_COPY_CHAN_TO_VFO                | 将当前频道设置复制到频率模式。在频道模式下长按  `1 BAND`                                             |
-| ENABLE_SPECTRUM                        | fagci 频谱分析仪，`F` + `5 NOAA`激活                                                  |
-| ENABLE_REDUCE_LOW_MID_TX_POWER         | 使中等和低功率设置更低                                                                   |
-| ENABLE_BYP_RAW_DEMODULATORS            | 额外的BYP（旁路？）和RAW解调选项，被证明并不十分有用，但如果你想实验的话，它是存在的                                 |
-| ENABLE_SCAN_RANGES                     | 频率扫描的扫描范围模式                                                                   |
-| ENABLE_BLOCK                           | EEPROM上锁                                                                      |
-| ENABLE_WARNING                         | 	    BEEP提示音                                                                  |
-| ENABLE_CUSTOM_SIDEFUNCTIONS            | 自定义侧键功能                                                                       |
-| ENABLE_SIDEFUNCTIONS_SEND              | 自定义侧键功能（侧键发射功能）                                                               |
-| ENABLE_AUDIO_BAR_DEFAULT               | 默认语音条样式                                                                       |
-| 📡 **自动多普勒**                           | [Automatic Doppler](https://github.com/losehu/uv-k5-firmware-custom)          |
-| ENABLE_DOPPLER                         | 自动多普勒功能                                                                       |
-| 📧 **短信**                              | [SMS](https://github.com/joaquimorg/uv-k5-firmware-custom)                    |
-| ENABLE_MESSENGER                       | 发送和接收短文本消息（按键 = `F` + `MENU`）                                                 |
-| ENABLE_MESSENGER_DELIVERY_NOTIFICATION | 如果收到消息，则向发送方发送通知                                                              |
-| ENABLE_MESSENGER_NOTIFICATION          | 在收到消息时播放声音                                                                    |
-| 📱 **MDC1200**                         | [MDC1200](https://github.com/OneOfEleven/uv-k5-firmware-custom)               |
-| ENABLE_MDC1200                         | MDC1200发送功能                                                                   |
-| ENABLE_MDC1200_SHOW_OP_ARG             | MDC显示首尾音参数                                                                    |
-| ENABLE_MDC1200_SIDE_BEEP               | MDC侧音                                                                         |
-| ENABLE_MDC1200_CONTACT                 | MDC联系人                                                                        |
-| 🎛️ **DOCK**                           | [DOCK](https://github.com/nicsure/QuanshengDock)                              |
-| ENABLE_DOCK                            | 允许通过电脑控制手台，无屏幕显示！                                                             |
-| 🚫 **调试**                              |                                                                               |
-| ENABLE_AM_FIX_SHOW_DATA                | 显示AM修复的调试数据                                                                   |
-| ENABLE_AGC_SHOW_DATA                   | 显示ACG参数                                                                       |
-| ENABLE_UART_RW_BK_REGS                 | 添加了两个额外的命令，允许读取和写入BK4819寄存器                                                   |
-| ⚠️ **编译选项**                            |                                                                               |
-| ENABLE_CLANG                           | 实验性质，使用clang而不是gcc构建（如果启用此选项，LTO将被禁用）                                         |
-| ENABLE_SWD                             | 使用CPU的SWD端口，调试/编程时需要                                                          |
-| ENABLE_OVERLAY                         | CPU FLASH相关内容，不需要                                                             |
-| ENABLE_LTO                             | 减小编译固件的大小，但可能会破坏EEPROM读取（启用后OVERLAY将被禁用）                                      |
+[Donation List](https://losehu.github.io/payment-codes/#%E6%94%B6%E6%AC%BE%E7%A0%81) Thank you very much for
+your support!!!
 
-# 打赏
+Donation Codes:
 
-如果这个项目对您有帮助,可以考虑赞助来支持开发工作。
-
-这是：[打赏名单](https://losehu.github.io/payment-codes/#%E6%94%B6%E6%AC%BE%E7%A0%81) 非常感谢各位的支持！！！
-
-打赏码：
-
-[![打赏码](https://github.com/losehu/uv-k5-firmware-chinese/blob/main/payment/show.png)](https://losehu.github.io/payment-codes/)
+[![Donation Codes](https://github.com/losehu/uv-k5-firmware-chinese/blob/main/payment/show.png)](https://losehu.github.io/payment-codes/)
 
 
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=losehu/uv-k5-firmware-custom&type=Date)](https://star-history.com/#losehu/uv-k5-firmware-custom&Date)
-

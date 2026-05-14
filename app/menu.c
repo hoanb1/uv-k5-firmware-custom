@@ -527,7 +527,7 @@ void MENU_AcceptSetting(void) {
 
             return;
 #endif
-        case MENU_MEM_NAME: //输入法
+        case MENU_MEM_NAME: 
             // trailing trim
             for (int i = MAX_EDIT_INDEX - 1; i >= 0; i--) {
                 if (edit[i] != ' ' && edit[i] != '_' && edit[i] != 0x00 && edit[i] != 0xff)
@@ -713,7 +713,7 @@ void MENU_AcceptSetting(void) {
                     GUI_SelectNextDisplay(DISPLAY_MAIN);
                     gDTMF_InputMode       = true;
                     gDTMF_InputBox_Index  = 3;
-                    memcpy(gDTMF_InputBox, gDTMF_ID, 4);
+                    memcpy(gDTMF_InputBox, g"D ID", 4);
                     gRequestDisplayScreen = DISPLAY_INVALID;
                 }
                 return;
@@ -1211,12 +1211,12 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) {
 
     gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
     uint8_t now_menu = UI_MENU_GetCurrentMenuId();
-#ifdef ENABLE_MDC1200_EDIT //输入法数字
+#ifdef ENABLE_MDC1200_EDIT 
     uint8_t end_index = now_menu == MENU_MEM_NAME ? MAX_EDIT_INDEX : 4;
 #else
     uint8_t end_index = MAX_EDIT_INDEX;
 #endif
-    if ((now_menu == MENU_MEM_NAME //输入法
+    if ((now_menu == MENU_MEM_NAME 
 #ifdef ENABLE_MDC1200
 #ifdef ENABLE_MDC1200_EDIT
                 || now_menu == MENU_MDC_ID
@@ -1496,7 +1496,7 @@ static void MENU_Key_MENU(const bool bKeyPressed, const bool bKeyHeld) {
 #endif
 
 #endif
-    if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME) { //输入法MENU
+    if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME) { 
         if (edit_index < 0) {    // enter channel name edit mode
             if (!RADIO_CheckValidChannel(gSubMenuSelection, false, 0))
                 return;
@@ -1592,7 +1592,7 @@ static void MENU_Key_STAR(const bool bKeyPressed, const bool bKeyHeld) {
         return;
 
     gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
-//输入法星模式切换
+
     if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && edit_index >= 0) {    // currently editing the channel name
 
         if (edit_index < MAX_EDIT_INDEX) {
@@ -1636,7 +1636,7 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction) 
     uint8_t VFO;
     uint8_t Channel;
     bool bCheckScanList;
-    if (gIsInSubMenu && edit_index >= 0) { //输入法UP DOWN
+    if (gIsInSubMenu && edit_index >= 0) { 
         if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME) {    // change the character
 
             if (bKeyPressed && edit_index < MAX_EDIT_INDEX) {
@@ -1790,7 +1790,7 @@ void MENU_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) {
             MENU_Key_STAR(bKeyPressed, bKeyHeld);
             break;
         case KEY_F:
-            if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && //输入法
+            if (UI_MENU_GetCurrentMenuId() == MENU_MEM_NAME && 
                 edit_index >= 0) {    // currently editing the channel name
                 if (!bKeyHeld && bKeyPressed) {
                     gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;

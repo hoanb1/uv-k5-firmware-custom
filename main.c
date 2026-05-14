@@ -207,7 +207,7 @@ void Main(void) {
     UI_DisplayClear();
     ST7565_BlitStatusLine();  // blank status line
     ST7565_BlitFullScreen();
-    char str[20]={0}; // 分配一个足够大的字符串数组来存储转换后的字符串
+    char str[20]={0}; 
     while(1)
     {
         char str[6];

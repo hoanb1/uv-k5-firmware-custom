@@ -13,7 +13,6 @@
  *     See the License for the specific language governing permissions and
  *     limitations under the License.
  */
-#include "chinese.h"
 #include <stdbool.h>
 #include <string.h>
 #include "app/scanner.h"
@@ -33,33 +32,33 @@ void UI_DisplayScanner(void) {
 
     UI_DisplayClear();
     if (gScanSingleFrequency || (gScanCssState != SCAN_CSS_STATE_OFF && gScanCssState != SCAN_CSS_STATE_FAILED)) {
-//频率
-        sprintf(String, 频率":%u.%05u", gScanFrequency / 100000, gScanFrequency % 100000);
+//"FREQ"
+        sprintf(String, "FREQ"":%u.%05u", gScanFrequency / 100000, gScanFrequency % 100000);
 
         pPrintStr = String;
     } else {
-        pPrintStr = 频率":**.*****";
+        pPrintStr = "FREQ"":**.*****";
     }
 
 
     UI_PrintStringSmall(pPrintStr, 2, 0, 1);
 
     if (gScanCssState < SCAN_CSS_STATE_FOUND || !gScanUseCssResult) {
-        pPrintStr = 模拟亚音":******";
+        pPrintStr = "CTCS"":******";
     } else if (gScanCssResultType == CODE_TYPE_CONTINUOUS_TONE) {
-        //模拟亚音
+        //"CTCS"
 #ifdef TEST_UNDE_CTCSS
 
-        sprintf(String, 模拟亚音":%u.%uHz", gScanCssResultCode_all/10, gScanCssResultCode_all% 10);
+        sprintf(String, "CTCS"":%u.%uHz", gScanCssResultCode_all/10, gScanCssResultCode_all% 10);
 #else
-        sprintf(String, 模拟亚音":%u.%uHz", CTCSS_Options[gScanCssResultCode] / 10,
+        sprintf(String, "CTCS"":%u.%uHz", CTCSS_Options[gScanCssResultCode] / 10,
                 CTCSS_Options[gScanCssResultCode] % 10);
 
 #endif
         pPrintStr = String;
     } else {
-//数字亚音
-        sprintf(String, 数字亚音":D%03oN", DCS_Options[gScanCssResultCode]);
+//"DCS"
+        sprintf(String, "DCS"":D%03oN", DCS_Options[gScanCssResultCode]);
 
         pPrintStr = String;
     }
@@ -67,7 +66,7 @@ void UI_DisplayScanner(void) {
     memset(String, 0, sizeof(String));
 
     if (gScannerSaveState == SCAN_SAVE_CHANNEL) {
-        pPrintStr = 存置问;
+        pPrintStr = "SAVE?";
         Start = 0;
         bCentered = 1;
     } else {
@@ -75,23 +74,23 @@ void UI_DisplayScanner(void) {
         bCentered = 0;
         if (gScannerSaveState == SCAN_SAVE_CHAN_SEL) {
 
-//存置
-            strcpy(String, 存置了);
+
+            strcpy(String, "SAVED!");
 
             UI_GenerateChannelStringEx(String + 3, gShowChPrefix, gScanChannel);
 
             pPrintStr = String;
         } else if (gScanCssState < SCAN_CSS_STATE_FOUND) {
 
-            //扫描
-            strcpy(String, 扫描);
+            //"Scan"
+            strcpy(String, "Scan");
             memset(String + 2, '.', (gScanProgressIndicator & 7) + 1);
 
             pPrintStr = String;
         } else if (gScanCssState == SCAN_CSS_STATE_FOUND) {
-            pPrintStr = 扫描" OK.";
+            pPrintStr = "Scan"" OK.";
         } else {
-            pPrintStr = 扫描" FAIL.";
+            pPrintStr = "Scan"" FAIL.";
         }
 
 

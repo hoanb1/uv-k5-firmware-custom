@@ -14,7 +14,6 @@
  *     limitations under the License.
  */
 #include "driver/uart.h"
-#include "chinese.h"
 #include <string.h>
 #include "driver/keyboard.h"
 #include "driver/eeprom.h"
@@ -33,9 +32,9 @@
 //    memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
 //
 //    if (BootMode == BOOT_MODE_F_LOCK) {
-//        //解锁，全部按键
-//        UI_PrintStringSmall(解锁, 0, 127, 1);
-//        UI_PrintStringSmall(全部按键, 0, 127, 3);
+
+
+
 //        ST7565_BlitStatusLine();  // blank status line
 //        ST7565_BlitFullScreen();
 //    }

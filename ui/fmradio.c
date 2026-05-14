@@ -27,7 +27,6 @@
 #include "ui/helper.h"
 #include "ui/inputbox.h"
 #include "ui/ui.h"
-#include "chinese.h"
 void UI_DisplayFM(void)
 {
     char String[16] = {0};
@@ -36,9 +35,9 @@ UI_DisplayClear();
     UI_PrintStringSmall("FM", 0, 127, 0);
 
     if (gAskToSave) {
-        pPrintStr = 存置问;
+        pPrintStr = "SAVE?";
     } else if (gAskToDelete) {
-        pPrintStr = 删除问;
+        pPrintStr = "DEL?";
     } else if (gFM_ScanState == FM_SCAN_OFF) {
         if (gEeprom.FM_IsMrMode) {
             sprintf(String, "MR(CH%02u)", gEeprom.FM_SelectedChannel + 1);

@@ -186,11 +186,11 @@ gEeprom.DTMF_auto_reset_time = (Data[4] < 61 && Data[4] >= 5) ? Data[4] : 10;
 
 	// 0EE0..0EE7
 
-EEPROM_ReadBuffer(0x0EE0, Data, sizeof(gEeprom.ANI_DTMF_ID));
-	if (DTMF_ValidateCodes((char *)Data, sizeof(gEeprom.ANI_DTMF_ID))) {
-		memcpy(gEeprom.ANI_DTMF_ID, Data, sizeof(gEeprom.ANI_DTMF_ID));
+EEPROM_ReadBuffer(0x0EE0, Data, sizeof(gEeprom.ANI_"D ID"));
+	if (DTMF_ValidateCodes((char *)Data, sizeof(gEeprom.ANI_"D ID"))) {
+		memcpy(gEeprom.ANI_"D ID", Data, sizeof(gEeprom.ANI_"D ID"));
 	} else {
-		strcpy(gEeprom.ANI_DTMF_ID, "123");
+		strcpy(gEeprom.ANI_"D ID", "123");
 	}
 
 
@@ -284,7 +284,7 @@ EEPROM_ReadBuffer(0x0EF0, Data, sizeof(gEeprom.REVIVE_CODE));
 
     EEPROM_ReadBuffer(0x0F30, gCustomAesKey, sizeof(gCustomAesKey));
     bHasCustomAesKey = false;
-    //锁定
+    
     for (unsigned int i = 0; i < ARRAY_SIZE(gCustomAesKey); i++)
     {
         if (gCustomAesKey[i] != 0xFFFFFFFFu)
@@ -392,7 +392,7 @@ void SETTINGS_FetchChannelName(char *s, const int channel)
 
     while (i >= 0 && s[i] == 32)  // trim trailing spaces
         s[i--] = 0;               // null term
-        //中文信道名
+        
 //    strcpy(s,"\x9b\x2c\x9b\x2c\x9b\x2c\x9b\x2c\x9b\x2c\x9b\x2c\x9b\x2c");
 }
 

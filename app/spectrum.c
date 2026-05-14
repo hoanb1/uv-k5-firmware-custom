@@ -231,13 +231,13 @@ static void ToggleTX(bool on) {
         BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);
         BK4819_WriteRegister(BK4819_REG_51, 0x9033);
 
-        //亚音
+        
         if (satellite.SEND_CTCSS == 0)
             BK4819_ExitSubAu();
         else
             BK4819_SetCTCSSFrequency(satellite.SEND_CTCSS);
 
-        //功率
+        
         FREQUENCY_Band_t Band = FREQUENCY_GetBand(fMeasure);
         uint8_t Txp[3];
         EEPROM_ReadBuffer(0x1ED0 + (Band * 16) + (OUTPUT_POWER_HIGH * 3), Txp, 3);
@@ -249,7 +249,7 @@ static void ToggleTX(bool on) {
 #endif
         //DTMF
         BK4819_DisableDTMF();
-        //加密
+        //"Scramb"
         BK4819_DisableScramble();
     } else {
         BK4819_GenTail(4); // CTC55
@@ -257,7 +257,7 @@ static void ToggleTX(bool on) {
 //        SYSTEM_DelayMs(200);
         BK4819_SetupPowerAmplifier(0, 0);
         RegRestore();
-//TODO:发射频率
+
         fMeasure = satellite_data.DownLink;
         SetTxF(fMeasure, true);
                 TX_ON=0;
@@ -849,7 +849,7 @@ static void DrawStatus() {
 #ifdef ENABLE_DOPPLER
 
     if (DOPPLER_MODE) {
-        //UI绘制状态栏
+        
         memset(gStatusLine, 0x7f, 39);
         GUI_DisplaySmallest(satellite.name, 2, 1, true, false);
         GUI_DisplaySmallest(String, 42 + (settings.dbMax > -100 ? 4 : 0), 1, true, true);
@@ -873,7 +873,7 @@ static void DrawStatus() {
 static void DrawF(uint32_t f) {
 #ifdef ENABLE_DOPPLER
     if (DOPPLER_MODE) {
-        //UI绘制
+        
         sprintf(String, "%03u.%05u", f / 100000, f % 100000);
 
         UI_DisplayFrequency(String, 8, 0, false);
@@ -1247,19 +1247,19 @@ static void RenderSpectrum() {
 
 static void Draw_DOPPLER_Process(uint8_t DATA_LINE) {
     int process = 0;
-    if (time_diff > 0)//还没来卫星
+    if (time_diff > 0)
     {
-        if (time_diff > 1000)//还早
+        if (time_diff > 1000)
         {
             strcpy(String, "Long");
 
-        } else//1000s以内
+        } else
         {
             sprintf(String, "-%4d sec", time_diff);
             process = time_diff * 45 / 1000;
         }
-    } else { //已经来了
-        if (time_diff1 >= 0)//正在过境
+    } else { 
+        if (time_diff1 >= 0)
         {
             sprintf(String, "+%4d sec", satellite.sum_time + time_diff);
             process = 45 - (satellite.sum_time + time_diff) * 45 / satellite.sum_time;
@@ -1285,7 +1285,7 @@ static void Draw_DOPPLER_Process(uint8_t DATA_LINE) {
 #endif
 
 static void RenderStill() {
-    DrawF(fMeasure);//绘制频率
+    DrawF(fMeasure);
     uint8_t METER_PAD_LEFT = 3;
     uint8_t P_WIDTH = 120;
     uint8_t S_LINE = 25;
@@ -1302,18 +1302,18 @@ static void RenderStill() {
 #endif
     memset(&gFrameBuffer[2][METER_PAD_LEFT], 0b01000000, P_WIDTH);
 
-    for (int i = 0; i <= P_WIDTH; i += 5) { //小刻度
+    for (int i = 0; i <= P_WIDTH; i += 5) { 
         gFrameBuffer[2][i + METER_PAD_LEFT] = 0b01100000;
 
     }
-    uint8_t x = Rssi2PX(scanInfo.rssi, 0, P_WIDTH);//信号强度
+    uint8_t x = Rssi2PX(scanInfo.rssi, 0, P_WIDTH);
     for (int i = 0; i < x; i++) {
         if (i % 5) {
             gFrameBuffer[2][i + METER_PAD_LEFT] |= 0b00001110;
         }
     }
 
-//S表参数绘制
+
     int dbm = Rssi2DBm(scanInfo.rssi);
     uint8_t s = DBm2S(dbm);
     bool fill = true;
@@ -1332,7 +1332,7 @@ static void RenderStill() {
         uint8_t x = Rssi2PX(settings.rssiTriggerLevel, 0, P_WIDTH);
         gFrameBuffer[2][METER_PAD_LEFT + x] = 0b11111111;
     }
-    //增益参数
+    
     const uint8_t PAD_LEFT = 4;
     const uint8_t CELL_WIDTH = 30;
     uint8_t offset = PAD_LEFT;
@@ -1662,13 +1662,13 @@ void RTCHandler(void) {
 
     RTC_Get();
     int32_t NOW_UNIX_TIME = UNIX_TIME(time);
-    time_diff = satellite.START_TIME_UNIX - NOW_UNIX_TIME; //卫星开始时间-现在时间
-    time_diff1 = satellite.sum_time + time_diff;//结束-开始+开始-现在
+    time_diff = satellite.START_TIME_UNIX - NOW_UNIX_TIME; 
+    time_diff1 = satellite.sum_time + time_diff;
 
     READ_DATA(time_diff, time_diff1);
 
 
-    RTC_IF |= (1 << 5);//清除中断标志位
+    RTC_IF |= (1 << 5);
 
 }
 

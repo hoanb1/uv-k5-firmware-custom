@@ -20,7 +20,6 @@
 #include "app/app.h"
 #include "app/chFrScanner.h"
 #include "app/common.h"
-#include "chinese.h"
 #ifdef ENABLE_4732
 #include "app/si.h"
 #endif
@@ -671,7 +670,7 @@ static void MAIN_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction) 
             BACKLIGHT_TurnOn();
             UI_DisplayClear();
 #ifndef ENABLE_ENGLISH
-//获取数据
+//取
             UI_PrintStringSmall("\xD0\xB4\xC8\xEB\xCA\xFD\xBE\xDD:", 0, 127, 2);
 #else
             UI_PrintStringSmall("GET DATA:", 0, 127, 2);
