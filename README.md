@@ -68,6 +68,27 @@ Requires a hardware mod (tapping the discriminator output to PA8). Decodes live 
 | **`F+DOWN`** | Automatic Doppler shift (if compiled). |
 | **`F+EXIT`** | Invert menu navigation (Up/Down). |
 
+### SI4732 Radio Shortcuts (When Enabled)
+
+| Key | Function |
+|---|---|
+| **Short press `Side Key 1`, Short press `Side Key 2`** | Change BFO in SSB mode |
+| **Short press `5`** | Enter frequency, **short press `*`** for decimal point, **short press `MENU`** to confirm |
+| **Short press `0`** | Switch mode (AM/FM/SSB), **short press `F`** to switch LSB/USB |
+| **Short press `1`, Short press `7`** | Change step frequency |
+| **Short press `4`** | Toggle signal strength display |
+| **Short press `6`** | Change bandwidth |
+| **Short press `2`, Short press `8`** | Toggle ATT |
+| **Short press `3`, Short press `9`** | Search up/down, **short press `EXIT`** to stop search |
+
+### Doppler Mode Shortcuts (When Enabled)
+
+| Key | Function |
+|---|---|
+| **Short press `5`** | Enter time, **short press `*`** for decimal point, **short press `MENU`** to confirm |
+| **Short press `MENU`** | Toggle parameters, adjust up/down |
+| **Short press `PTT`** | Transmit |
+| **Short press `Side Key 1`** | Enable listening |
 ## ⚙️ Makefile Compilation Options
 
 If you wish to compile your own custom variations manually, you can pass flags directly to `make`. 
@@ -86,6 +107,23 @@ make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1
 - `ENABLE_MESSENGER=1` : SMS capabilities
 - `ENABLE_UART=1` : Enable PC programming (Chirp/K5Prog)
 
+## 🧠 EEPROM Layout Explanation
+
+| Eeprom Address | Description |
+|---|---|
+| **0X01D00 ~ 0x02000** | Rarely changed. |
+| **0X01D00 ~ 0X01E00<br/>0X1F90 ~ 0X01FF0** | **MDC1200** - 22 MDC contacts. Each contact occupies 16B (first 2B: MDC ID, next 14B: contact name). |
+| **0X01FFF** | **MDC1200** - Number of MDC contacts. |
+| **0x01FFD ~ 0x01FFE** | **MDC1200** - MDC ID. |
+| **0x01FF8 ~ 0x01FFC** | Side key functions. |
+| **Expanded EEPROM (≥1Mib)** | |
+| **0x02000 ~ 0x02025** | Custom Boot Characters. |
+| **0x02080 ~ 0x02480** | Custom Boot Screen (128 * 64/8 = 1024 bytes). |
+| **0x02480 ~ 0x02B96** | Custom Fonts (BigDigits, 3x5, Small) and Menu encoding. |
+| **0x02BA0 ~ 0x02BA9** | **Doppler** - Satellite names (up to 9 chars). |
+| **0x02BAA ~ 0x02BB5** | **Doppler** - Start transit time and departure time (YY-MM-DD-HH-MM-SS). |
+| **0x02BB6 ~ 0x02BBB** | **Doppler** - Total transit time, Transmitter sub-audio, Receiver sub-audio. |
+| **0x02C00 ~ 0x02D34** | **Doppler** - CTCSS_Options and DCS_Options. |
 ## Disclaimer
 
 Flashing custom firmware carries inherent risks. You are responsible for ensuring your radio operates within the legal limits of your local regulations.
