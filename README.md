@@ -66,9 +66,9 @@
 
 > ⚠️ **Lưu ý về bộ nhớ (ROM):** Vi điều khiển chỉ có 64KB Flash nên không thể bật tất cả các tính năng cùng lúc. Để sử dụng **Radiosonde RS41**, bạn buộc phải tắt bớt các tính năng khác để nhường chỗ trống.
 > 
-> Ví dụ, nếu bạn muốn dùng **RS41 kèm với SI4732 và SSB**, bạn có thể tự biên dịch với lệnh sau (tắt các tính năng cơ bản như DTMF, Flashlight, UART...):
+> Ví dụ, nếu bạn muốn dùng **RS41 kèm với SI4732 và SSB**, bạn có thể tự biên dịch với lệnh sau (lệnh này sẽ tự động tắt các tính năng cơ bản không cần thiết như DTMF, Flashlight, VOX, UART để tiết kiệm bộ nhớ):
 > ```bash
-> make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1 ENABLE_ENGLISH=1 ENABLE_MESSENGER=0 ENABLE_MDC1200=0 ENABLE_FMRADIO=0 ENABLE_UART=0 ENABLE_DTMF_CALLING=0 ENABLE_AIRCOPY=0 ENABLE_ALARM=0 ENABLE_TX1750=0 ENABLE_VOX=0 ENABLE_BIG_FREQ=0 ENABLE_NO_CODE_SCAN_TIMEOUT=0 ENABLE_AM_FIX=0 ENABLE_SQUELCH_MORE_SENSITIVE=0 ENABLE_FASTER_CHANNEL_SCAN=0 ENABLE_COPY_CHAN_TO_VFO=0 ENABLE_SCAN_RANGES=0 ENABLE_CUSTOM_SIDEFUNCTIONS=0 ENABLE_SIDEFUNCTIONS_SEND=0 ENABLE_WIDE_RX=0 ENABLE_KEEP_MEM_NAME=0 ENABLE_RSSI_BAR=0 ENABLE_PWRON_PASSWORD=0 ENABLE_FLASHLIGHT=0 ENABLE_UART_RW_BK_REGS=0 ENABLE_BOOT_BEEPS=0 ENABLE_REVERSE_BAT_SYMBOL=0 ENABLE_SHOW_CHARGE_LEVEL=0 ENABLE_SPECTRUM=0 ENABLE_CHINESE_FULL=0 ENABLE_PINYIN=0
+> make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1 ENABLE_ENGLISH=1 
 > ```
 
 # 操作说明(必读！！)
