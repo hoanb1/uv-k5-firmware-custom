@@ -197,7 +197,7 @@ typedef struct {
     uint8_t               MIC_SENSITIVITY_TUNING;
     uint8_t               CHAN_1_CALL;
 #ifdef ENABLE_DTMF_CALLING
-    char                  ANI_"D ID"[8];
+    char                  ANI_DTMF_ID[8];
 	char                  KILL_CODE[8];
 	char                  REVIVE_CODE[8];
 #endif

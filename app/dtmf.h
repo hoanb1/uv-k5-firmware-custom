@@ -85,7 +85,7 @@ extern uint8_t           gDTMF_RX_timeout;
 extern bool              gDTMF_RX_pending;
 
 extern bool              gIsDtmfContactValid;
-extern char              g"D ID"[4];
+extern char              gDTMF_ID[4];
 extern char              gDTMF_Caller[4];
 extern char              gDTMF_Callee[4];
 extern DTMF_State_t      gDTMF_State;

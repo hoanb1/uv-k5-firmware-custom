@@ -186,11 +186,11 @@ gEeprom.DTMF_auto_reset_time = (Data[4] < 61 && Data[4] >= 5) ? Data[4] : 10;
 
 	// 0EE0..0EE7
 
-EEPROM_ReadBuffer(0x0EE0, Data, sizeof(gEeprom.ANI_"D ID"));
-	if (DTMF_ValidateCodes((char *)Data, sizeof(gEeprom.ANI_"D ID"))) {
-		memcpy(gEeprom.ANI_"D ID", Data, sizeof(gEeprom.ANI_"D ID"));
+EEPROM_ReadBuffer(0x0EE0, Data, sizeof(gEeprom.ANI_DTMF_ID));
+	if (DTMF_ValidateCodes((char *)Data, sizeof(gEeprom.ANI_DTMF_ID))) {
+		memcpy(gEeprom.ANI_DTMF_ID, Data, sizeof(gEeprom.ANI_DTMF_ID));
 	} else {
-		strcpy(gEeprom.ANI_"D ID", "123");
+		strcpy(gEeprom.ANI_DTMF_ID, "123");
 	}
 
 

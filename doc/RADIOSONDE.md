@@ -11,18 +11,18 @@ You must connect **Pin 6 (EARO)** of the BK4819 to **PA8** of the DP32G030 MCU v
 
 ![Audio Connection Hardware Mod](../images/audio-connection.jpg)
 
-## Hướng dẫn sử dụng (Usage Instructions)
+## Usage Instructions
 
-1. **Khởi động tính năng:** Từ màn hình chính, nhấn giữ phím **`9`** (hoặc `F+9` tùy máy) để mở bộ giải mã Radiosonde RS41.
-2. **Các phím điều khiển:**
-   - **`UP` / `DOWN`**: Tăng/giảm tần số đi 100 kHz (dải từ 400 MHz đến 406 MHz).
-   - **`MENU` (hoặc `M`)**: Chuyển đổi qua lại giữa màn hình Thông số (Monitor) và màn hình Mã QR (QR Code).
-   - **`1`**: Chuyển nhanh tần số về 400.000 MHz.
-   - **`2`**: Chuyển nhanh tần số về 402.000 MHz.
-   - **`3`**: Chuyển nhanh tần số về 403.000 MHz (tần số phổ biến nhất).
-   - **`4`**: Chuyển nhanh tần số về 404.000 MHz.
-   - **`5`**: Chuyển nhanh tần số về 405.000 MHz.
-   - **`EXIT`**: Thoát khỏi chế độ Radiosonde và trở về màn hình chính.
+1. **Start Decoder:** From the main screen, long press **`9`** (or `F+9` depending on configuration) to open the RS41 Radiosonde Decoder.
+2. **Controls:**
+   - **`UP` / `DOWN`**: Increase/decrease frequency by 100 kHz (range 400 MHz to 406 MHz).
+   - **`MENU` (or `M`)**: Toggle between the Telemetry Monitor screen and the QR Code screen.
+   - **`1`**: Quick tune to 400.000 MHz.
+   - **`2`**: Quick tune to 402.000 MHz.
+   - **`3`**: Quick tune to 403.000 MHz (most common frequency).
+   - **`4`**: Quick tune to 404.000 MHz.
+   - **`5`**: Quick tune to 405.000 MHz.
+   - **`EXIT`**: Exit the Radiosonde mode and return to the main screen.
 
 ## Software Features
 

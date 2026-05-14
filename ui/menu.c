@@ -976,7 +976,7 @@ void UI_DisplayMenu(void) {
 #ifdef ENABLE_DTMF_CALLING
             case MENU_ANI_ID:
 
-                strcpy(String, gEeprom.ANI_"D ID");
+                strcpy(String, gEeprom.ANI_DTMF_ID);
                 break;
 #endif
 
@@ -1193,8 +1193,8 @@ void UI_DisplayMenu(void) {
     if (UI_MENU_GetCurrentMenuId() == MENU_D_LIST && gIsDtmfContactValid) {
 
         Contact[11] = 0;
-        memcpy(&g"D ID", Contact + 8, 4);
-        sprintf(String, "ID:%4s", g"D ID");
+        memcpy(&gDTMF_ID, Contact + 8, 4);
+        sprintf(String, "ID:%4s", gDTMF_ID);
         UI_PrintStringSmall(String, menu_item_x1, menu_item_x2, 5);
     }
 #endif

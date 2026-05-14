@@ -9,6 +9,7 @@ ENABLE_SWD                    ?= 1
 ENABLE_OVERLAY                ?= 0
 ENABLE_LTO                    ?= 1
 
+ENABLE_ENGLISH ?= 1
 # ---- STOCK QUANSHENG FERATURES ----
 ENABLE_UART                   ?= 1
 ENABLE_AIRCOPY                ?= 0
@@ -71,7 +72,7 @@ ENABLE_4732SSB =0
 ENABLE_DOPPLER               =0
 ENABLE_RS41                  =0
 #############################################################
-PACKED_FILE_SUFFIX = LOSEHU132E
+PACKED_FILE_SUFFIX = UVK5_MOD
 
 ifeq ($(ENABLE_DOPPLER),1)
 	ENABLE_SPECTRUM=1
@@ -288,7 +289,7 @@ endif
 OBJCOPY = arm-none-eabi-objcopy
 SIZE = arm-none-eabi-size
 
-AUTHOR_STRING ?= LOSEHU
+AUTHOR_STRING ?= CUSTOM
 # the user might not have/want git installed
 # can set own version string here (max 7 chars)
 ifneq (, $(shell $(WHERE) git))
