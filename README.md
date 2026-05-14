@@ -124,6 +124,16 @@ make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1
 | **0x02BAA ~ 0x02BB5** | **Doppler** - Start transit time and departure time (YY-MM-DD-HH-MM-SS). |
 | **0x02BB6 ~ 0x02BBB** | **Doppler** - Total transit time, Transmitter sub-audio, Receiver sub-audio. |
 | **0x02C00 ~ 0x02D34** | **Doppler** - CTCSS_Options and DCS_Options. |
+## Credits
+
+This project is a customized fork built upon the incredible work of the following open-source projects:
+
+- **[Dual Tachyon](https://github.com/DualTachyon/uv-k5-firmware)**: The original open-source firmware for the Quansheng UV-K5.
+- **[losehu](https://github.com/losehu/uv-k5-firmware-custom)**: Provided the foundational base for advanced features such as the SI4732 integration and the expanded feature set.
+- **[OneOfEleven](https://github.com/OneOfEleven/uv-k5-firmware-custom)**: Significant code optimizations and feature enhancements.
+
+Special thanks to the global UV-K5 development community for their continuous contributions to this platform.
+
 ## Disclaimer
 
 Flashing custom firmware carries inherent risks. You are responsible for ensuring your radio operates within the legal limits of your local regulations.

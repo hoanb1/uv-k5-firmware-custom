@@ -34,21 +34,21 @@ jobs: #定义工作流程
       - name: Create ZIP file
         run: |
             mkdir -p output
-            zip -j output/losehu.zip ./LOSEHU*.bin ./version.json ./function.json
+            zip -j output/firmware_custom.zip ./UVK5_MOD*.bin ./version.json ./function.json
 
       - name: Upload ALL #上传固件文件
         uses: actions/upload-artifact@v4 #使用 GitHub Actions 提供的 upload-artifact 动作
         with:
           name: firmware_all #设置 artifact 名称为 firmware
-          path: output/losehu.zip #上传文件路径为 LOSEHU*.bin
+          path: output/firmware_custom.zip #上传文件路径为 UVK5_MOD*.bin
 
       - name: Upload files
         run: |
-          echo "Uploading LOSEHU.zip to ftp"
+          echo "Uploading firmware_custom.zip to ftp"
           lftp -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }} <<EOF
-          cd losehu
+          cd firmware
           set ssl:verify-certificate no
-          put output/losehu.zip
+          put output/firmware_custom.zip
           bye
           EOF
       
