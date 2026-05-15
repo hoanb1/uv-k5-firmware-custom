@@ -7,7 +7,7 @@ This document outlines the hardware modifications and software implementations r
 To successfully decode the RS41's 4800 baud GFSK telemetry, the MCU needs access to the raw, unfiltered audio signal (discriminator output) from the BK4819 radio IC. The standard audio path passes through HPF/LPF filters and de-emphasis which distorts the digital waveform.
 
 **Required Mod:**
-You must connect **Pin 8 (EARO)** of the BK4819 to **PA8** of the DP32G030 MCU via a **DC-blocking capacitor** (e.g., 100nF). This bypasses the internal audio filters and provides a clean waveform to the MCU's ADC for processing.
+You must connect **Pin 8 (EARO)** of the BK4819 to **Pin 9 (PA8)** of the DP32G030 MCU via a **DC-blocking capacitor** (e.g., 100nF). This bypasses the internal audio filters and provides a clean waveform to the MCU's ADC for processing.
 
 ![Audio Connection Hardware Mod](../images/audio-connection.jpg)
 

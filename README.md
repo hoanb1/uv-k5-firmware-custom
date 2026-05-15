@@ -45,7 +45,7 @@ You can use `k5prog` to flash the firmware directly via the USB-C programming ca
 
 ### Radiosonde RS41 Decoder
 [Detailed Hardware Modification & Usage Guide](doc/RADIOSONDE.md)
-Requires a hardware mod (tapping the discriminator output from BK4819 Pin 8 to MCU PA8). Decodes live telemetry, GPS coordinates, and generates a dynamic QR Code for immediate smartphone map integration.
+Requires a hardware mod (tapping the discriminator output from BK4819 Pin 8 to MCU Pin 9 - PA8). Decodes live telemetry, GPS coordinates, and generates a dynamic QR Code for immediate smartphone map integration.
 
 ### Operating Instructions / Shortcuts
 

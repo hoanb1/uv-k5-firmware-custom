@@ -484,7 +484,7 @@ void APP_RunRadiosonde(void)
     gSondeApp.pending_history = '.';
     gSondeApp.history_sample_acc = 0;
 
-    // ADC setup for signal monitoring (PA8 / UART1_RX -> ADC_CH3)
+    // ADC setup for signal monitoring (MCU Pin 9 - PA8 / UART1_RX -> ADC_CH3)
     PORTCON_PORTA_IE &= ~PORTCON_PORTA_IE_A8_MASK;
     PORTCON_PORTA_PU &= ~PORTCON_PORTA_PU_A8_MASK;  // Disable Pull-Up
     PORTCON_PORTA_PD |= PORTCON_PORTA_PD_A8_MASK;   // Enable Pull-Down only to lower bias
@@ -509,7 +509,7 @@ void APP_RunRadiosonde(void)
         }
 
         if (gSondeApp.mode != SONDE_MODE_QR) {
-            // Configure ADC to read CH3 (PA8)
+            // Configure ADC to read CH3 (MCU Pin 9 - PA8)
             SARADC_CFG = (SARADC_CFG & ~SARADC_CFG_CH_SEL_MASK) | 
                          ((ADC_CH3 << SARADC_CFG_CH_SEL_SHIFT) & SARADC_CFG_CH_SEL_MASK);
 
@@ -691,7 +691,7 @@ void APP_RunRadiosonde(void)
     SARADC_CFG = (SARADC_CFG & ~SARADC_CFG_CH_SEL_MASK) | 
                  (((ADC_CH4 | ADC_CH9) << SARADC_CFG_CH_SEL_SHIFT) & SARADC_CFG_CH_SEL_MASK);
 
-    // Restore PA8 (UART1_RX)
+    // Restore MCU Pin 9 - PA8 (UART1_RX)
     PORTCON_PORTA_SEL1 &= ~PORTCON_PORTA_SEL1_A8_MASK;
     PORTCON_PORTA_PU &= ~PORTCON_PORTA_PU_A8_MASK;
     PORTCON_PORTA_PD &= ~PORTCON_PORTA_PD_A8_MASK;
