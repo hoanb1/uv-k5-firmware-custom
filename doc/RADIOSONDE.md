@@ -10,8 +10,7 @@ To successfully decode the RS41's 4800 baud GFSK telemetry, the MCU needs access
 You must connect **Pin 8 (EARO)** of the BK4819 to **Pin 9 (PA8)** of the DP32G030 MCU via a **DC-blocking capacitor** (e.g., 100nF). This bypasses the internal audio filters and provides a clean waveform to the MCU's ADC for processing.
 
 ![Audio Connection Hardware Mod](../images/audio-connection.jpg)
-![image]
-(../images/IMG_20260519_073139.jpg)
+![image](../images/IMG_20260519_073139.jpg)
 ## Usage Instructions
 
 1. **Start Decoder:** From the main screen, long press **`9`** (or `F+9` depending on configuration) to open the RS41 Radiosonde Decoder.
