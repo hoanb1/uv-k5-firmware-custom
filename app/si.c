@@ -234,30 +234,23 @@ static void SI_LoadPreset(uint8_t slot) {
     uint16_t addr = EEPROM_PRESETS_ADDR + (slot - 1) * sizeof(SI_Preset_t);
     EEPROM_ReadBuffer(addr, &preset, sizeof(SI_Preset_t));
     
-    if (preset.frequency != 0xFFFF && preset.frequency > 0) {
-        if (preset.mode < 5) {
-            if (si4732mode != preset.mode) {
-                if (preset.mode == SI47XX_FM) {
-                    divider = 1000;
-                } else {
-                    divider = 100;
-                }
-                SI47XX_SwitchMode(preset.mode);
-                if (preset.mode == SI47XX_FM) {
-                    step = 10;
-                } else if (preset.mode == SI47XX_AM) {
-                    step = 5;
-                } else {
-                    step = 1;
-                }
-            }
-            tune(preset.frequency * divider);
-            resetBFO();
-            gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
-            return;
+    if (preset.frequency != 0xFFFF && preset.frequency > 0 && preset.mode < 5) {
+        if (preset.mode == SI47XX_FM) {
+            divider = 1000;
+            step = 10;
+        } else {
+            divider = 100;
+            step = (preset.mode == SI47XX_AM) ? 5 : 1;
         }
+        if (si4732mode != preset.mode) {
+            SI47XX_SwitchMode(preset.mode);
+        }
+        tune(preset.frequency * divider);
+        resetBFO();
+        gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
+    } else {
+        gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
     }
-    gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
 }
 
 
