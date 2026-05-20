@@ -1,42 +1,28 @@
 #include "si.h"
-#include "../driver/bk4819.h"
-#include "../driver/si473x.h"
-#include "../helper/rds.h"
-#include "../misc.h"
-
-//
-// Created by RUPC on 2024/3/10.
-//
 #include "board.h"
-
-#include "driver/si473x.h"
-#include "bsp/dp32g030/gpio.h"
-#include "bsp/dp32g030/syscon.h"
-
-#include "driver/gpio.h"
-#include "driver/i2c.h"
-#include "driver/system.h"
-#include "frequencies.h"
-#include "misc.h"
-#include "ui/helper.h"
-#include <string.h>
-#include "./si.h"
-#include "app/fm.h"
-#include "driver/st7565.h"
-#include "external/printf/printf.h"
 #include "misc.h"
 #include "settings.h"
+#include "frequencies.h"
+#include "audio.h"
+#include "app/fm.h"
+#include "bsp/dp32g030/gpio.h"
+#include "bsp/dp32g030/syscon.h"
+#include "driver/backlight.h"
+#include "driver/bk4819.h"
+#include "driver/eeprom.h"
+#include "driver/gpio.h"
+#include "driver/i2c.h"
+#include "driver/si473x.h"
+#include "driver/st7565.h"
+#include "driver/system.h"
+#include "helper/rds.h"
 #include "ui/fmradio.h"
 #include "ui/helper.h"
 #include "ui/inputbox.h"
-
-#include "stdbool.h"
-
-#include "driver/eeprom.h"
-#include "driver/backlight.h"
-#include "ui/helper.h"
-
+#include "external/printf/printf.h"
+#include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
     FM_BT,
@@ -62,8 +48,6 @@ static SI47XX_SsbFilterBW ssbBw = SI47XX_SSB_BW_3_kHz;
 static int8_t currentBandIndex = -1;
 bool SNR_flag = true;
 bool SI_run = true;
-
-#include "audio.h"
 
 typedef struct __attribute__((packed)) {
     uint16_t frequency;
