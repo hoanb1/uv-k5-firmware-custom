@@ -521,9 +521,21 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
                     display_flag = true;
                     break;
                 case KEY_EXIT:
+                    SI_run = false;
+                    break;
                 case KEY_STAR:
                     gPresetState = PRESET_MODE_OFF;
                     BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+                    display_flag = true;
+                    break;
+                case KEY_0:
+                    gPresetState = PRESET_MODE_OFF;
+                    BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+                    divider = 1000;
+                    SI47XX_SwitchMode(SI47XX_FM);
+                    step = 10;
+                    tune(Read_FreqSaved());
+                    resetBFO();
                     display_flag = true;
                     break;
                 case KEY_1:
@@ -656,30 +668,30 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
                 FreqInput();
                 return ;
             case KEY_0:
-                divider = 100;
                 WaitDisplay();
                 if (si4732mode == SI47XX_FM) {
+                    divider = 100;
                     SI47XX_SwitchMode(SI47XX_AM);
                     SI47XX_SetBandwidth(bw, true);
-//                    tune(720000);
                     step = 5;
                 }
 #ifdef ENABLE_4732SSB
-
-
-                    else if (si4732mode == SI47XX_AM) {
-
-                        SI47XX_SwitchMode(SI47XX_LSB);
-                        SI47XX_SetSsbBandwidth(ssbBw);
-    //                    tune(711300);
-                        step = 1;
-                    }
+                else if (si4732mode == SI47XX_AM) {
+                    divider = 100;
+                    SI47XX_SwitchMode(SI47XX_LSB);
+                    SI47XX_SetSsbBandwidth(ssbBw);
+                    step = 1;
+                }
+                else if (si4732mode == SI47XX_LSB) {
+                    divider = 100;
+                    SI47XX_SwitchMode(SI47XX_USB);
+                    SI47XX_SetSsbBandwidth(ssbBw);
+                    step = 1;
+                }
 #endif
-
                 else {
                     divider = 1000;
                     SI47XX_SwitchMode(SI47XX_FM);
-//                    tune(10000000);
                     step = 10;
                 }
                 tune(Read_FreqSaved());
@@ -701,7 +713,11 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
                     SI47XX_PowerDown();
                     SI47XX_PowerUp();
                     seeking = false;
-                } else SI_run = false;
+                } else {
+                    gPresetState = PRESET_MODE_LOAD;
+                    gPresetIndex = 0;
+                    gPresetKeyWaitingRelease = true;
+                }
                 return ;
             case KEY_3:
             case KEY_9:
