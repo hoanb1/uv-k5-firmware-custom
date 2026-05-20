@@ -57,7 +57,7 @@ Does not require any hardware modification. Works by reading the BK4819 RSSI reg
 * **Keyboard Text Entry**: Multi-tap alphanumeric text editor with backspace (STAR key).
 * **Automated Morse Transmission**: Type a message and press MENU to transmit it automatically. Shows real-time flashing LED and screen indicator matching the code.
 * **Manual Paddles**: Press Side Key 1 for dit and Side Key 2 for dah.
-* **Speaker Audio Output (F key)**: Toggle speaker between Sound On (`SON`) and Mute (`MUT`). *Note: Due to stock hardware constraints, the tone generator outputs ticking/clicking sounds rather than a pure audio tone on the transmitter speaker; this is a known limitation.*
+* **Speaker Audio Output (F key)**: Toggle speaker between Sound On (`SON`) and Mute (`MUT`). Enables sidetone audio through the speaker during transmission (TX) using dynamic Tone 1 generator activation.
 
 
 ### Operating Instructions / Shortcuts

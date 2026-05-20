@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
   - Integrated transmission abort functionality via the `EXIT` key.
   - Stripped the optional QR Code display from the Radiosonde decoder to save flash space.
   - Optimized code footprint by removing all division/modulus operations from `app/cw.c` (using lookup tables for WPM dit durations and index boundary checks), saving valuable flash space to fit the combined firmware.
-  - Added a speaker audio toggle in CW mode using the `F` key to switch between Sound On (`SON`) and Mute (`MUT`). Enables forced speaker output for listening to CW signals, though tone generation has known limitations on FM-only hardware (currently heard as ticking/clicking).
+  - Added a speaker audio toggle in CW mode using the `F` key to switch between Sound On (`SON`) and Mute (`MUT`). Enables sidetone audio through the speaker during transmission (TX) by dynamically re-enabling/disabling the BK4819 Tone 1 generator, preventing the clicking/ticking artifact caused by hardware mute reset.
 - **Radiosonde Position Persistence**:
   - The last decoded Radiosonde (RS41) position, altitude, satellite count, and battery voltage are now saved to the EEPROM at address range `0x1F70 - 0x1F7F` upon exit or telemetry update.
   - Telemetry parameters are loaded automatically when opening the Radiosonde app, ensuring tracking data is never lost even if the radio is powered down or rebooted.

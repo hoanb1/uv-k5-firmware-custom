@@ -131,6 +131,7 @@ static void tx_on(void) {
 static void tx_off(void) {
     if (!tx_active) return;
     BK4819_EnterTxMute();
+    BK4819_WriteRegister(BK4819_REG_70, 0); // Disable Tone 1 generator
     APP_EndTransmission(true);
     BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, false);
     gEnableSpeaker = false;
@@ -290,9 +291,11 @@ void CW_Tick(void) {
             } else {
                 tx_cnt = (elem < 0) ? -elem : elem;
                 if (elem > 0) {
+                    BK4819_WriteRegister(BK4819_REG_70, BK4819_REG_70_MASK_ENABLE_TONE1 | (66u << BK4819_REG_70_SHIFT_TONE1_TUNING_GAIN));
                     BK4819_ExitTxMute();
                 } else {
                     BK4819_EnterTxMute();
+                    BK4819_WriteRegister(BK4819_REG_70, 0);
                 }
                 
                 // Force speaker state during TX sidetone to avoid clicky pops
