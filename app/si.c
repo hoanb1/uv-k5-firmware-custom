@@ -737,7 +737,9 @@ void SI4732_Main() {
     SYSCON_DEV_CLK_GATE= SYSCON_DEV_CLK_GATE & ( ~(1 << 22));
 #endif
 
-    gPresetState = PRESET_MODE_OFF;
+    gPresetState = PRESET_MODE_LOAD;
+    gPresetIndex = 0;
+    gPresetKeyWaitingRelease = true;
     light_open();
     SI_init();
 
