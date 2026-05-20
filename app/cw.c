@@ -6,8 +6,10 @@
 //     Hysteresis + noise-floor tracking for reliable mark/space detection.
 //     Auto WPM estimation via mark duration EMA.
 //
-// TX paddle: Side Key 1 = dit, Side Key 2 = dah
-//            UP / DOWN adjust WPM (5-40)
+// TX paddles: Side Key 1 = dit, Side Key 2 = dah
+// TX keyboard: Keys 0-9 = multi-tap text entry, Star = Backspace, Menu = Send text
+//              F = Toggle sound output (mute/unmute speaker)
+//              UP / DOWN adjust WPM (5-40)
 //
 // Toggle: Long Press 9
 // Exit:   EXIT key while CW mode is active
@@ -45,6 +47,10 @@ static const char CW_RX_TABLE[64] = {
     '7', 0,   '8', 0,   '9', '0', 0,   0
 };
 
+// Keypad multi-tap mapping (flattened to save flash)
+static const char KEY_MAP_STR[] = " 0,.1ABC2DEF3GHI4JKL5MNO6PQRS7TUV8WXYZ9";
+static const uint8_t KEY_MAP_OFF[] = {0, 2, 5, 9, 13, 17, 21, 25, 30, 34, 39};
+
 // ============================================================
 // TX element queue (positive ticks = tone ON, negative = silence)
 // ============================================================
@@ -55,6 +61,20 @@ static uint8_t tx_head;
 static int8_t  tx_cnt;
 static bool    tx_active;
 
+// Speaker / Sound output state (mute/unmute local speaker during RX/TX)
+static bool        cw_speaker;
+
+// String transmission state
+static const char* tx_str;
+static uint8_t     tx_str_pos;
+static uint8_t     tx_char_bits;
+static uint8_t     tx_char_len;
+
+// Multi-tap typing state
+static KEY_Code_t  last_key;
+static uint8_t     key_idx;
+static uint16_t    key_timeout_ticks;
+
 // ============================================================
 // RX decoder state
 // ============================================================
@@ -62,7 +82,6 @@ static char     rx_buf[CW_DISPLAY_LEN + 1];
 static uint8_t  rx_pos;
 
 // Noise floor tracker (updated only during silence = carrier OFF)
-// Units: raw RSSI (REG_67[8:0]), range 0..511
 static uint16_t rx_noise8;      // noise floor EMA × 8
 static uint16_t rx_signal8;     // peak signal EMA × 8 (updated during mark)
 
@@ -70,16 +89,15 @@ static bool     rx_mark;        // current state: mark or space
 static uint16_t rx_dur;         // ticks in current state
 static uint8_t  rx_tree;        // binary tree position
 static uint16_t rx_dit;         // estimated dit length in ticks
-
-// Calibration counter: first 30 ticks = learn noise floor, no decode
-static uint8_t  rx_calib;
+static uint8_t  rx_calib;       // calibration counter
 
 // ============================================================
-// WPM
+// WPM Maps to avoid divisions
 // ============================================================
-static uint8_t cw_wpm = CW_WPM_DEFAULT;
-
-#define DIT_T(wpm) ((uint8_t)(120u / (wpm)))
+static const uint8_t WPM_DIT_MAP[8] = { 24, 12, 8, 6, 5, 4, 3, 3 };
+static const char WPM_NAMES[8][3] = { "05", "10", "15", "20", "25", "30", "35", "40" };
+static uint8_t cw_wpm_idx = 2; // Default 15 WPM (index 2)
+static uint8_t cw_dit_ticks;
 
 // ============================================================
 // TX helpers
@@ -91,9 +109,22 @@ static void tx_on(void) {
     BK4819_ToggleGpioOut(BK4819_GPIO5_PIN1_RED, true);
     FUNCTION_Select(FUNCTION_TRANSMIT);
     RADIO_SetTxParameters();
+    
+    // Enable local sidetone by enabling AF DAC in Reg 30
+    if (cw_speaker) {
+        BK4819_WriteRegister(BK4819_REG_30, 0xC3FE);
+    } else {
+        BK4819_WriteRegister(BK4819_REG_30, 0xC1FE);
+    }
+
     BK4819_TransmitTone(true, CW_TONE_HZ);
-    AUDIO_AudioPathOn();
-    gEnableSpeaker = true;
+    if (cw_speaker) {
+        AUDIO_AudioPathOn();
+        gEnableSpeaker = true;
+    } else {
+        gEnableSpeaker = false;
+        AUDIO_AudioPathOff();
+    }
     BK4819_EnterTxMute();
 }
 
@@ -110,7 +141,7 @@ static void tx_off(void) {
 }
 
 static void q_element(bool is_dah) {
-    uint8_t dit  = DIT_T(cw_wpm);
+    uint8_t dit  = cw_dit_ticks;
     uint8_t tone = (uint8_t)(is_dah ? dit * 3u : dit);
     if (tone > 127u) tone = 127u;
     if (dit  > 127u) dit  = 127u;
@@ -154,24 +185,100 @@ void CW_Init(void) {
     rx_mark   = false;
     rx_dur    = 0;
     rx_tree   = 1u;
-    rx_calib  = 30u;   // 300ms calibration
+    rx_calib  = 30u;
 
     tx_active = false;
     tx_head   = 0;
     tx_cnt    = 0;
     tx_q[0]   = 0;
 
+    cw_speaker = true;
+
+    tx_str      = NULL;
+    tx_str_pos  = 0;
+    tx_char_len = 0;
+
+    last_key          = KEY_INVALID;
+    key_idx           = 0;
+    key_timeout_ticks = 0;
+
+    cw_dit_ticks = WPM_DIT_MAP[cw_wpm_idx];
+
     gCW_Active = true;
 }
 
 void CW_Deinit(void) {
-    if (tx_active) tx_off();
+    if (tx_active || tx_str != NULL) tx_off();
     gCW_Active = false;
+    gEnableSpeaker = false;
+    AUDIO_AudioPathOff();
 }
 
 // Called every 10ms from APP_TimeSlice10ms
 void CW_Tick(void) {
     if (!gCW_Active) return;
+
+    if (key_timeout_ticks > 0) {
+        key_timeout_ticks--;
+    }
+
+    // --- TX string queue logic ---
+    if (tx_q[tx_head] == 0 && tx_str != NULL) {
+        if (tx_char_len == 0) {
+            char c = tx_str[tx_str_pos];
+            if (c == 0) {
+                tx_str = NULL;
+            } else {
+                tx_str_pos++;
+                if (c == ' ') {
+                    uint8_t dit = cw_dit_ticks;
+                    tx_q[0] = -(int8_t)(dit * 4u); // 4 more dits of silence (7 total)
+                    tx_q[1] = 0;
+                    tx_head = 0;
+                    tx_cnt  = 0;
+                } else {
+                    if (c >= 'a' && c <= 'z') c -= 32;
+                    uint8_t idx = 0;
+                    for (uint8_t i = 2; i < 64; i++) {
+                        if (CW_RX_TABLE[i] == c) {
+                            idx = i;
+                            break;
+                        }
+                    }
+                    if (idx > 1) {
+                        tx_char_bits = 0;
+                        tx_char_len  = 0;
+                        while (idx > 1) {
+                            tx_char_bits = (uint8_t)((tx_char_bits << 1) | (idx & 1));
+                            tx_char_len++;
+                            if (idx & 1) idx = (uint8_t)((idx - 1) >> 1);
+                            else         idx = (uint8_t)(idx >> 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (tx_char_len > 0) {
+            bool is_dah = (tx_char_bits & 1);
+            tx_char_bits >>= 1;
+            tx_char_len--;
+
+            uint8_t dit = cw_dit_ticks;
+            uint8_t tone = (uint8_t)(is_dah ? dit * 3u : dit);
+            if (tone > 127u) tone = 127u;
+            
+            tx_q[0] = (int8_t)tone;
+            if (tx_char_len == 0) {
+                tx_q[1] = -(int8_t)(dit * 3u); // inter-character space (3 dits)
+            } else {
+                tx_q[1] = -(int8_t)dit;        // inter-element space (1 dit)
+            }
+            tx_q[2] = 0;
+            tx_head = 0;
+            tx_cnt  = 0;
+        }
+    }
 
     // --- TX state machine ---
     if (tx_q[tx_head] != 0) {
@@ -182,8 +289,21 @@ void CW_Tick(void) {
                 tx_off();
             } else {
                 tx_cnt = (elem < 0) ? -elem : elem;
-                if (elem > 0) BK4819_ExitTxMute();
-                else          BK4819_EnterTxMute();
+                if (elem > 0) {
+                    BK4819_ExitTxMute();
+                } else {
+                    BK4819_EnterTxMute();
+                }
+                
+                // Force speaker state during TX sidetone to avoid clicky pops
+                if (cw_speaker) {
+                    gEnableSpeaker = true;
+                    AUDIO_AudioPathOn();
+                } else {
+                    gEnableSpeaker = false;
+                    AUDIO_AudioPathOff();
+                }
+                
                 tx_head++;
             }
         } else {
@@ -195,73 +315,68 @@ void CW_Tick(void) {
         return;
     }
 
-    // --- RX: read RSSI (works in FM mode — CW raises carrier RSSI) ---
-    uint16_t rssi = BK4819_GetRSSI();   // 0..511
+    // Force speaker state during RX
+    if (cw_speaker) {
+        gEnableSpeaker = true;
+        AUDIO_AudioPathOn();
+    } else {
+        gEnableSpeaker = false;
+        AUDIO_AudioPathOff();
+    }
 
-    // Calibration: learn noise floor first, don't decode
+    // --- RX: read RSSI (works in FM mode — CW raises carrier RSSI) ---
+    uint16_t rssi = BK4819_GetRSSI();
+
     if (rx_calib > 0) {
         rx_calib--;
-        // Fast init of noise floor
         rx_noise8 = (uint16_t)((rx_noise8 * 7u + (uint32_t)rssi * 8u) >> 3u);
         return;
     }
 
-    // --- Adaptive thresholds with hysteresis ---
-    // Noise floor: updated ONLY when in silence (space state)
     if (!rx_mark) {
-        // Slow EMA: alpha = 1/16
         rx_noise8 = (uint16_t)((rx_noise8 * 15u + (uint32_t)rssi * 8u) >> 4u);
     } else {
-        // Signal peak: updated during mark
         rx_signal8 = (uint16_t)((rx_signal8 * 7u + (uint32_t)rssi * 8u) >> 3u);
     }
 
-    uint16_t noise   = rx_noise8  >> 3u;   // noise floor
-    uint16_t signal  = rx_signal8 >> 3u;   // signal level
+    uint16_t noise   = rx_noise8  >> 3u;
+    uint16_t signal  = rx_signal8 >> 3u;
     uint16_t midpoint = (uint16_t)((noise + signal) >> 1u);
 
-    // Guard: need meaningful signal above noise
     if (midpoint < noise + CW_RSSI_MIN_DELTA) {
-        // Signal too weak — reset state, wait
         rx_mark = false;
         rx_dur  = 0;
         rx_tree = 1u;
         return;
     }
 
-    // Hysteresis: start mark at 75% of midpoint above noise,
-    //             end mark at 25% of midpoint above noise
     uint16_t hi_thr = (uint16_t)(noise + ((midpoint - noise) * 3u >> 2u));
     uint16_t lo_thr = (uint16_t)(noise + ((midpoint - noise) >> 2u));
 
     bool is_mark;
     if (rx_mark)
-        is_mark = (rssi > lo_thr);   // keep mark until signal drops below lo
+        is_mark = (rssi > lo_thr);
     else
-        is_mark = (rssi > hi_thr);   // start mark only when signal exceeds hi
+        is_mark = (rssi > hi_thr);
 
     if (is_mark == rx_mark) {
         if (rx_dur < 255u) rx_dur++;
         return;
     }
 
-    // --- State transition ---
     if (rx_mark) {
-        // Mark just ended → classify dit or dah
         if (rx_tree < 32u) {
             uint16_t boundary = (uint16_t)(rx_dit + (rx_dit >> 1u));
             if (rx_dur <= boundary)
-                rx_tree = (uint8_t)(rx_tree * 2u);         // dit
+                rx_tree = (uint8_t)(rx_tree * 2u);
             else
-                rx_tree = (uint8_t)(rx_tree * 2u + 1u);    // dah
+                rx_tree = (uint8_t)(rx_tree * 2u + 1u);
 
-            // Update dit estimate (EMA alpha = 1/4) — clamp to sane range
             uint16_t new_dit = (uint16_t)((rx_dit * 3u + rx_dur) >> 2u);
             if (new_dit > 1u && new_dit < 30u)
                 rx_dit = new_dit;
         }
     } else {
-        // Space just ended → classify gap
         if      (rx_dur >= rx_dit * 7u) { rx_commit(); rx_push(' '); }
         else if (rx_dur >= rx_dit * 2u)   rx_commit();
     }
@@ -272,23 +387,86 @@ void CW_Tick(void) {
 
 // Called from MAIN_ProcessKeys when gCW_Active
 void CW_ProcessKey(KEY_Code_t Key, bool pressed, bool held) {
+    if (Key >= KEY_0 && Key <= KEY_9) {
+        if (pressed && !held && tx_str == NULL) {
+            uint8_t num = (uint8_t)(Key - KEY_0);
+            uint8_t start = KEY_MAP_OFF[num];
+            uint8_t map_len = (uint8_t)(KEY_MAP_OFF[num + 1] - start);
+
+            if (key_timeout_ticks > 0 && Key == last_key && rx_pos > 0) {
+                key_idx++;
+                if (key_idx >= map_len) key_idx = 0;
+                rx_buf[rx_pos - 1] = KEY_MAP_STR[start + key_idx];
+            } else {
+                if (rx_pos < CW_DISPLAY_LEN) {
+                    key_idx = 0;
+                    rx_buf[rx_pos++] = KEY_MAP_STR[start];
+                    rx_buf[rx_pos]   = 0;
+                }
+            }
+            last_key = Key;
+            key_timeout_ticks = 100; // 1 second
+        }
+        return;
+    }
+
     switch (Key) {
         case KEY_SIDE1:
-            if (pressed && !held && !tx_active) q_element(false);
+            if (pressed && !held && !tx_active && tx_str == NULL) q_element(false);
             break;
         case KEY_SIDE2:
-            if (pressed && !held && !tx_active) q_element(true);
+            if (pressed && !held && !tx_active && tx_str == NULL) q_element(true);
             break;
         case KEY_UP:
-            if (!pressed && !held && cw_wpm < CW_WPM_MAX)
-                cw_wpm = (uint8_t)(cw_wpm + 5u);
+            if (!pressed && !held && cw_wpm_idx < 7) {
+                cw_wpm_idx++;
+                cw_dit_ticks = WPM_DIT_MAP[cw_wpm_idx];
+            }
             break;
         case KEY_DOWN:
-            if (!pressed && !held && cw_wpm > CW_WPM_MIN)
-                cw_wpm = (uint8_t)(cw_wpm - 5u);
+            if (!pressed && !held && cw_wpm_idx > 0) {
+                cw_wpm_idx--;
+                cw_dit_ticks = WPM_DIT_MAP[cw_wpm_idx];
+            }
+            break;
+        case KEY_STAR:
+            if (pressed && !held && tx_str == NULL) {
+                if (rx_pos > 0) {
+                    rx_pos--;
+                    rx_buf[rx_pos] = 0;
+                    key_timeout_ticks = 0;
+                }
+            }
+            break;
+        case KEY_MENU:
+            if (pressed && !held && tx_str == NULL && rx_pos > 0) {
+                tx_str = rx_buf;
+                tx_str_pos = 0;
+                tx_char_len = 0;
+                key_timeout_ticks = 0;
+            }
+            break;
+        case KEY_F:
+            if (pressed && !held) {
+                cw_speaker = !cw_speaker;
+                if (!cw_speaker) {
+                    gEnableSpeaker = false;
+                    AUDIO_AudioPathOff();
+                } else if (tx_active) {
+                    AUDIO_AudioPathOn();
+                    gEnableSpeaker = true;
+                }
+            }
             break;
         case KEY_EXIT:
-            if (!pressed && !held) CW_Deinit();
+            if (!pressed && !held) {
+                if (tx_str != NULL) {
+                    tx_str = NULL;
+                    tx_off();
+                } else {
+                    CW_Deinit();
+                }
+            }
             break;
         default:
             break;
@@ -297,41 +475,33 @@ void CW_ProcessKey(KEY_Code_t Key, bool pressed, bool held) {
 
 // Render CW screen
 void CW_Display(void) {
-    char wpm_str[20];
+    char wpm_str[12];
 
     memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
 
-    // Row 0: header (shortened to prevent overflow crash)
+    // Row 0: header
     UI_PrintStringSmall("-CW- SK1=. SK2=-", 0, 127, 0);
 
-    // Row 2: WPM + status
-    uint8_t n  = rx_noise8 >> 3u;
-    uint8_t s  = rx_signal8 >> 3u;
-    wpm_str[0]  = (char)('0' + cw_wpm / 10u);
-    wpm_str[1]  = (char)('0' + cw_wpm % 10u);
-    wpm_str[2]  = 'W';
-    wpm_str[3]  = ' ';
-    wpm_str[4]  = tx_active ? 'T' : (rx_calib ? 'C' : (rx_mark ? '*' : ' '));
-    wpm_str[5]  = 'X';
-    wpm_str[6]  = ' ';
-    wpm_str[7]  = 'N';
-    wpm_str[8]  = (char)('0' + (n / 100u) % 10u);
-    wpm_str[9]  = (char)('0' + (n / 10u)  % 10u);
-    wpm_str[10] = (char)('0' + n % 10u);
-    wpm_str[11] = ' ';
-    wpm_str[12] = 'S';
-    wpm_str[13] = (char)('0' + (s / 100u) % 10u);
-    wpm_str[14] = (char)('0' + (s / 10u)  % 10u);
-    wpm_str[15] = (char)('0' + s % 10u);
-    wpm_str[16] = 0;
+    // Row 2: WPM + status + sound output state
+    wpm_str[0] = WPM_NAMES[cw_wpm_idx][0];
+    wpm_str[1] = WPM_NAMES[cw_wpm_idx][1];
+    wpm_str[2] = 'W';
+    wpm_str[3] = ' ';
+    wpm_str[4] = (tx_str != NULL) ? 'T' : (rx_calib ? 'C' : (rx_mark ? '*' : 'R'));
+    wpm_str[5] = (tx_str != NULL) ? 'X' : (rx_calib ? 'A' : 'X');
+    wpm_str[6] = rx_calib ? 'L' : ' ';
+    wpm_str[7] = ' ';
+    wpm_str[8] = cw_speaker ? 'S' : 'M';
+    wpm_str[9] = cw_speaker ? 'O' : 'U';
+    wpm_str[10] = cw_speaker ? 'N' : 'T';
+    wpm_str[11] = 0;
     UI_PrintStringSmall(wpm_str, 0, 127, 2);
 
-    // Row 4: decoded text
+    // Row 4: decoded text or message being typed
     UI_PrintStringSmall(rx_buf, 0, 127, 4);
 
-    // Row 6: UP/DN=WPM EXIT=quit (split into 2 columns to prevent centering overflow crash)
-    UI_PrintStringSmall("UP/DN=WPM", 0, 63, 6);
-    UI_PrintStringSmall("EXIT=QUIT", 64, 127, 6);
+    // Row 6: control menu (one single call to prevent centering overflow crash)
+    UI_PrintStringSmall("M=TX *=DEL F=SND EX=QT", 0, 127, 6);
 
     ST7565_BlitFullScreen();
 }

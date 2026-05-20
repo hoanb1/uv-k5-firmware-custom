@@ -14,7 +14,7 @@ typedef struct {
     int32_t alt_cm;
 } SavedSonde_t;
 
-extern void miniqr_encode(const char *text, uint8_t qrcode[25][25]);
+
 
 #include <string.h>
 #include <stdio.h>
@@ -187,56 +187,6 @@ static void Sonde_DrawPixel(int x, int y, bool black) {
     }
 }
 
-static void Sonde_DrawQRCode(const RS41_Data_t *d) {
-    if (!d->valid) {
-        GUI_DisplaySmallest("NO GPS DATA", 0, 24, false, true);
-        return;
-    }
-
-    char url[64];
-    int32_t lat_deg = d->lat_1e6 / 1000000;
-    int32_t lat_frac = d->lat_1e6 % 1000000;
-    if (lat_frac < 0) lat_frac = -lat_frac;
-    int32_t lon_deg = d->lon_1e6 / 1000000;
-    int32_t lon_frac = d->lon_1e6 % 1000000;
-    if (lon_frac < 0) lon_frac = -lon_frac;
-
-    // geo:lat,lon
-    sprintf(url, "geo:%ld.%04ld,%ld.%04ld", 
-            (long)lat_deg, (long)(lat_frac / 100), 
-            (long)lon_deg, (long)(lon_frac / 100));
-
-    static uint8_t qrcode[25][25];
-    miniqr_encode(url, qrcode);
-
-    int size = 25; // Fixed size for version 2
-    int scale_x = 3; // 3x2 scaling compensates for the tall pixels of the UV-K5 LCD
-    int scale_y = 2; 
-    
-    // Center the QR code, but shift slightly up to avoid the bottom black bezel
-    // and provide a guaranteed white quiet zone.
-    int offset_x = (128 - size * scale_x) / 2;
-    int offset_y = 6; // 6 pixels of white at top, perfectly centers the 50px tall QR code
-
-    // Draw white background
-    for (int y = 0; y < 64; y++) {
-        for (int x = 0; x < 128; x++) {
-            Sonde_DrawPixel(x, y, false);
-        }
-    }
-
-    // Draw QR
-    for (int y = 0; y < size; y++) {
-        for (int x = 0; x < size; x++) {
-            bool isDark = qrcode[y][x];
-            for (int dy = 0; dy < scale_y; dy++) {
-                for (int dx = 0; dx < scale_x; dx++) {
-                    Sonde_DrawPixel(offset_x + x * scale_x + dx, offset_y + y * scale_y + dy, isDark);
-                }
-            }
-        }
-    }
-}
 
 static void Sonde_Render(void)
 {
@@ -259,7 +209,7 @@ static void Sonde_Render(void)
     const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
 
     if (gSondeApp.mode == SONDE_MODE_QR) {
-        Sonde_DrawQRCode(d);
+        
     } else if (gSondeApp.mode == SONDE_MODE_DIAGNOSTIC) {
         Sonde_DrawDiagnostic();
     } else {

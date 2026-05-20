@@ -51,6 +51,15 @@ You can use `k5prog` to flash the firmware directly via the USB-C programming ca
 
 Requires a hardware mod (tapping the discriminator output from BK4819 Pin 8 to MCU Pin 9 - PA8). Decodes live telemetry, GPS coordinates, and generates a dynamic QR Code for immediate smartphone map integration.
 
+### CW Morse Decoder & Transmitter
+Does not require any hardware modification. Works by reading the BK4819 RSSI register at high speed.
+* **Decoder**: Automatic WPM estimation and text decoding from FM signals, tracking noise floor dynamically.
+* **Keyboard Text Entry**: Multi-tap alphanumeric text editor with backspace (STAR key).
+* **Automated Morse Transmission**: Type a message and press MENU to transmit it automatically. Shows real-time flashing LED and screen indicator matching the code.
+* **Manual Paddles**: Press Side Key 1 for dit and Side Key 2 for dah.
+* **Speaker Audio Output (F key)**: Toggle speaker between Sound On (`SON`) and Mute (`MUT`). *Note: Due to stock hardware constraints, the tone generator outputs ticking/clicking sounds rather than a pure audio tone on the transmitter speaker; this is a known limitation.*
+
+
 ### Operating Instructions / Shortcuts
 
 | Key | Function |
@@ -65,14 +74,30 @@ Requires a hardware mod (tapping the discriminator output from BK4819 Pin 8 to M
 | **Long Press `3` / `F+3`** | Switch between Frequency (VFO) / Channel (MR) mode. |
 | **Long Press `6` / `F+6`** | Switch transmit power. |
 | **Long Press `8` / `F+8`** | Reverse frequency. |
-| **Long Press `9` / `F+9`** | **Open RS41 Radiosonde Decoder** (if compiled). |
+| Long Press `9` | **Open CW Morse Decoder + Keyer** (if compiled). |
+| **`F+9`** | **Open RS41 Radiosonde Decoder** (if compiled). |
 | **`F+5`** | Spectrum Analyzer (if compiled). |
 | **`F+M`** | Open SMS Messenger (if compiled). |
 | **`F+UP`** | Toggle key tone. |
 | **`F+DOWN`** | Automatic Doppler shift (if compiled). |
 | **`F+EXIT`** | Invert menu navigation (Up/Down). |
 
+### CW Mode Shortcuts (When Enabled)
+
+| Key | Function |
+|---|---|
+| **`0` - `9`** | Multi-tap alphanumeric text entry (Nokia style). |
+| **`STAR (*)`** | Backspace (delete last character from buffer). |
+| **`MENU`** | Send the composed text automatically over the air (M=TX). |
+| **`F` (# key)** | Toggle local speaker sound output (`SON` for sound on, `MUT` for silent RX decoding and TX transmission). |
+| **`UP` / `DOWN`** | Adjust WPM speed (5 to 40 WPM). |
+| **`Side Key 1`** | Send custom manual **dit** (.) tone. |
+| **`Side Key 2`** | Send custom manual **dah** (-) tone. |
+| **`EXIT`** | Abort automatic transmission if active; exits CW mode if idle. |
+
+
 ### SI4732 Radio Shortcuts (When Enabled)
+
 
 | Key | Function |
 |---|---|

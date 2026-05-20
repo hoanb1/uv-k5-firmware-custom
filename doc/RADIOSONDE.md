@@ -13,10 +13,10 @@ You must connect **Pin 8 (EARO)** of the BK4819 to **Pin 9 (PA8)** of the DP32G0
 ![image](../images/IMG_20260519_073139.jpg)
 ## Usage Instructions
 
-1. **Start Decoder:** From the main screen, long press **`9`** (or `F+9` depending on configuration) to open the RS41 Radiosonde Decoder.
+1. **Start Decoder:** From the main screen, press **`F+9`** to open the RS41 Radiosonde Decoder (Long press `9` is mapped to CW Mode).
 2. **Controls:**
    - **`UP` / `DOWN`**: Increase/decrease frequency by 100 kHz (range 400 MHz to 406 MHz).
-   - **`MENU` (or `M`)**: Toggle between the Telemetry Monitor screen and the QR Code screen.
+   - **`MENU` (or `M`)**: Toggle between the Telemetry Monitor screen and the QR Code screen *(if compiled with QR support)*.
    - **`1`**: Quick tune to 400.000 MHz.
    - **`2`**: Quick tune to 402.000 MHz.
    - **`3`**: Quick tune to 403.000 MHz (most common frequency).
@@ -38,10 +38,11 @@ Once the signal is locked, the radio displays live telemetry from the weather ba
 ![Radiosonde Monitor Screen](../images/radiosonde-monitor.jpg)
 
 ### QR Code Fast Export
-To make retrieving the balloon easier, you can switch the display to show a dynamic QR Code. Scanning this code with a smartphone will immediately open your map application (Google Maps, Apple Maps, etc.) with a pin dropped at the balloon's coordinates.
+To make retrieving the balloon easier, you can switch the display to show a dynamic QR Code *(Note: QR Code rendering is stripped in combined high-feature builds like RS41+SI4732+CW to fit in the tight 64KB flash limit)*. Scanning this code with a smartphone will immediately open your map application (Google Maps, Apple Maps, etc.) with a pin dropped at the balloon's coordinates.
 
 - **Aspect Ratio Correction**: The UV-K5 LCD has rectangular (non-square) pixels. The firmware uses a precise **3x2 integer scaling** algorithm to ensure the QR code renders as a perfect physical square.
 - **Quiet Zones**: The QR code is specifically offset (`offset_y = 6`) to clear the physical black bezel of the screen, ensuring standard white quiet zones are maintained for 100% reliable scanning under any lighting condition.
+
 
 ## Specialized High-Feature Build (RS41 + SI4732 + SSB)
 

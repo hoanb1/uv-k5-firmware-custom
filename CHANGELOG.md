@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - 2026-05-20
 
 ### Added
+- **CW Keyboard Text Entry & Auto-Transmit**:
+  - Added keypad multi-tap character entry using keys `0`-`9` and backspace using the `*` key to compose text messages directly in CW mode.
+  - Added automated text-to-CW transmission over the air triggered by the `MENU` key, with visual status (`TX` badge) and LED flashing matching the dits/dahs.
+  - Integrated transmission abort functionality via the `EXIT` key.
+  - Stripped the optional QR Code display from the Radiosonde decoder to save flash space.
+  - Optimized code footprint by removing all division/modulus operations from `app/cw.c` (using lookup tables for WPM dit durations and index boundary checks), saving valuable flash space to fit the combined firmware.
+  - Added a speaker audio toggle in CW mode using the `F` key to switch between Sound On (`SON`) and Mute (`MUT`). Enables forced speaker output for listening to CW signals, though tone generation has known limitations on FM-only hardware (currently heard as ticking/clicking).
 - **Radiosonde Position Persistence**:
   - The last decoded Radiosonde (RS41) position, altitude, satellite count, and battery voltage are now saved to the EEPROM at address range `0x1F70 - 0x1F7F` upon exit or telemetry update.
   - Telemetry parameters are loaded automatically when opening the Radiosonde app, ensuring tracking data is never lost even if the radio is powered down or rebooted.
@@ -13,6 +20,7 @@ All notable changes to this project will be documented in this file.
   - Implemented an optimized 3-byte layout per preset slot to minimize EEPROM usage and prevent conflicts with system settings or MDC1200 contact storage.
   - Preset data is saved in a dedicated, safe EEPROM address range: `0x1900 - 0x193B`.
   - Added clear physical feedback: the green status LED glows when the preset loading or saving interface is active.
+
 
 ### Changed
 - **SI4732 Preset Interface & Shortcuts**:
