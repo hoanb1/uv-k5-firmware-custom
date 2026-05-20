@@ -5,6 +5,15 @@
 
 #include "radiosonde.h"
 #include "rs41.h"
+#include "../driver/eeprom.h"
+
+typedef struct {
+    uint32_t frequency;
+    int32_t lat_1e6;
+    int32_t lon_1e6;
+    int32_t alt_cm;
+} SavedSonde_t;
+
 extern void miniqr_encode(const char *text, uint8_t qrcode[25][25]);
 
 #include <string.h>
@@ -484,6 +493,25 @@ void APP_RunRadiosonde(void)
     gSondeApp.pending_history = '.';
     gSondeApp.history_sample_acc = 0;
 
+    uint16_t save_cooldown = 0;
+
+    // Restore last saved radiosonde state from EEPROM (0x1F70)
+    SavedSonde_t saved;
+    EEPROM_ReadBuffer(0x1F70, &saved, sizeof(saved));
+    if (saved.frequency >= SONDE_FREQ_START && saved.frequency <= SONDE_FREQ_END) {
+        gSondeApp.frequency = saved.frequency;
+        if (saved.lat_1e6 >= -90000000 && saved.lat_1e6 <= 90000000 &&
+            saved.lon_1e6 >= -180000000 && saved.lon_1e6 <= 180000000 &&
+            saved.lat_1e6 != 0 && saved.lon_1e6 != 0) {
+            gSondeApp.decoder.data.valid = true;
+            gSondeApp.decoder.data.lat_1e6 = saved.lat_1e6;
+            gSondeApp.decoder.data.lon_1e6 = saved.lon_1e6;
+            gSondeApp.decoder.data.alt_cm = saved.alt_cm;
+            strcpy(gSondeApp.decoder.data.sonde_id, "LAST GPS");
+            gSondeApp.mode = SONDE_MODE_MONITOR;
+        }
+    }
+
     // ADC setup for signal monitoring (MCU Pin 9 - PA8 / UART1_RX -> ADC_CH3)
     PORTCON_PORTA_IE &= ~PORTCON_PORTA_IE_A8_MASK;
     PORTCON_PORTA_PU &= ~PORTCON_PORTA_PU_A8_MASK;  // Disable Pull-Up
@@ -599,6 +627,10 @@ void APP_RunRadiosonde(void)
             SARADC_CFG = (SARADC_CFG & ~SARADC_CFG_CH_SEL_MASK) | 
                          (((ADC_CH4 | ADC_CH9) << SARADC_CFG_CH_SEL_SHIFT) & SARADC_CFG_CH_SEL_MASK);
                          
+            if (save_cooldown > 0) {
+                save_cooldown--;
+            }
+
             // Update timeout counters and latch successful decodes
             if (frame_decoded) {
                 gSondeApp.timeout_frames = 0;
@@ -608,6 +640,20 @@ void APP_RunRadiosonde(void)
                 // Auto-switch to Monitor if we have valid coordinates and are currently looking at Diagnostics
                 if (gSondeApp.mode == SONDE_MODE_DIAGNOSTIC && gSondeApp.decoder.data.valid) {
                     gSondeApp.mode = SONDE_MODE_MONITOR;
+                }
+
+                // Periodic save to EEPROM with 15-second cooldown
+                if (gSondeApp.decoder.data.valid && gSondeApp.decoder.data.lat_1e6 != 0) {
+                    if (save_cooldown == 0) {
+                        SavedSonde_t saved_data;
+                        saved_data.frequency = gSondeApp.frequency;
+                        saved_data.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
+                        saved_data.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
+                        saved_data.alt_cm = gSondeApp.decoder.data.alt_cm;
+                        EEPROM_WriteBuffer(0x1F70, &saved_data, 8);
+                        EEPROM_WriteBuffer(0x1F78, ((uint8_t*)&saved_data) + 8, 8);
+                        save_cooldown = 15;
+                    }
                 }
             } else {
                 gSondeApp.timeout_frames++;
@@ -680,6 +726,27 @@ void APP_RunRadiosonde(void)
         Sonde_Render();
         BACKLIGHT_TurnOn();
     } // End of main loop
+
+    // Save final radiosonde state to EEPROM on clean exit
+    SavedSonde_t final_save;
+    final_save.frequency = gSondeApp.frequency;
+    
+    // Read previous EEPROM data to preserve coordinates if we don't have live ones
+    SavedSonde_t old_saved;
+    EEPROM_ReadBuffer(0x1F70, &old_saved, sizeof(old_saved));
+    
+    if (gSondeApp.decoder.data.valid && gSondeApp.decoder.data.lat_1e6 != 0) {
+        final_save.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
+        final_save.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
+        final_save.alt_cm = gSondeApp.decoder.data.alt_cm;
+    } else {
+        // Preserve old coordinates from EEPROM
+        final_save.lat_1e6 = old_saved.lat_1e6;
+        final_save.lon_1e6 = old_saved.lon_1e6;
+        final_save.alt_cm = old_saved.alt_cm;
+    }
+    EEPROM_WriteBuffer(0x1F70, &final_save, 8);
+    EEPROM_WriteBuffer(0x1F78, ((uint8_t*)&final_save) + 8, 8);
 
     // ============================================================
     // Cleanup and hardware restoration on exit

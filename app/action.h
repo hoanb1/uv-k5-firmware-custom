@@ -30,7 +30,7 @@ void ACTION_Scan(bool bRestart);
 void ACTION_Vox(void);
 #endif
 
-#ifdef ENABLE_FMRADIO
+#if defined(ENABLE_FMRADIO) || defined(ENABLE_4732)
 void ACTION_FM(void);
 #endif
 

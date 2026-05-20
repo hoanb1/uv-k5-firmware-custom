@@ -95,11 +95,8 @@ static void processFKeyFunction(const KEY_Code_t Key, const bool beep) {
     switch (Key) {
 
         case KEY_0:
-#ifdef ENABLE_FMRADIO
+#if defined(ENABLE_FMRADIO) || defined(ENABLE_4732)
             ACTION_FM();
-#endif
-#ifdef ENABLE_4732
-            SI4732_Main();
 #endif
             break;
 

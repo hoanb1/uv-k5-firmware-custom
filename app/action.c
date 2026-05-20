@@ -32,6 +32,10 @@
 #include "app/fm.h"
 #endif
 
+#ifdef ENABLE_4732
+#include "app/si.h"
+#endif
+
 #include "app/scanner.h"
 #include "audio.h"
 #include "bsp/dp32g030/gpio.h"
@@ -82,7 +86,7 @@ void (*action_opt_table[])(void) = {
         [ACTION_OPT_VOX] = &FUNCTION_NOP,
 #endif
 
-#ifdef ENABLE_FMRADIO
+#if defined(ENABLE_FMRADIO) || defined(ENABLE_4732)
         [ACTION_OPT_FM] = &ACTION_FM,
 #else
         [ACTION_OPT_FM] = &FUNCTION_NOP,
@@ -420,9 +424,12 @@ void ACTION_Handle(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) {
 //	}
 }
 
-#ifdef ENABLE_FMRADIO
+#if defined(ENABLE_FMRADIO) || defined(ENABLE_4732)
 void ACTION_FM(void)
 {
+#ifdef ENABLE_4732
+    SI4732_Main();
+#else
 if (gCurrentFunction != FUNCTION_TRANSMIT && gCurrentFunction != FUNCTION_MONITOR)
     {
         gInputBoxIndex = 0;
@@ -447,9 +454,11 @@ if (gCurrentFunction != FUNCTION_TRANSMIT && gCurrentFunction != FUNCTION_MONITO
 
         gRequestDisplayScreen = DISPLAY_FM;
     }
+#endif
 }
+#endif
 
-
+#ifdef ENABLE_FMRADIO
 static void ACTION_Scan_FM(bool bRestart)
 {
     if (FUNCTION_IsRx())

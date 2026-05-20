@@ -79,6 +79,8 @@ Requires a hardware mod (tapping the discriminator output from BK4819 Pin 8 to M
 | **Short press `Side Key 1`, Short press `Side Key 2`** | Change BFO in SSB mode |
 | **Short press `5`** | Enter frequency, **short press `*`** for decimal point, **short press `MENU`** to confirm |
 | **Short press `0`** | Switch mode (AM/FM/SSB), **short press `F`** to switch LSB/USB |
+| **Short press `*`** | **Load Preset** (Select slot 1-9 to load frequency and mode). |
+| **Long press `*`** | **Save Preset** (Select slot 1-9 to save current frequency and mode). |
 | **Short press `1`, Short press `7`** | Change step frequency |
 | **Short press `4`** | Toggle signal strength display |
 | **Short press `6`** | Change bandwidth |
@@ -115,9 +117,11 @@ make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1
 
 | Eeprom Address | Description |
 |---|---|
-| **0X01D00 ~ 0x02000** | Rarely changed. |
-| **0X01D00 ~ 0X01E00<br/>0X1F90 ~ 0X01FF0** | **MDC1200** - 22 MDC contacts. Each contact occupies 16B (first 2B: MDC ID, next 14B: contact name). |
-| **0X01FFF** | **MDC1200** - Number of MDC contacts. |
+| **0x01D00 ~ 0x02000** | Rarely changed. |
+| **0x01D00 ~ 0x01E00<br/>0x1F90 ~ 0x01FF0** | **MDC1200** - 22 MDC contacts. Each contact occupies 16B (first 2B: MDC ID, next 14B: contact name). |
+| **0x01F50 ~ 0x01F6B** | **SI4732 Presets** - 9 quick-access slots (3 bytes each: 2B frequency, 1B modulation mode). |
+| **0x01F70 ~ 0x01F7F** | **Radiosonde Tracker** - Saved telemetry data of the last decoded weather balloon. |
+| **0x01FFF** | **MDC1200** - Number of MDC contacts. |
 | **0x01FFD ~ 0x01FFE** | **MDC1200** - MDC ID. |
 | **0x01FF8 ~ 0x01FFC** | Side key functions. |
 | **Expanded EEPROM (≥1Mib)** | |

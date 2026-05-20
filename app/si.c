@@ -63,6 +63,28 @@ static int8_t currentBandIndex = -1;
 bool SNR_flag = true;
 bool SI_run = true;
 
+#include "audio.h"
+
+typedef struct __attribute__((packed)) {
+    uint16_t frequency;
+    uint8_t mode;
+} SI_Preset_t;
+
+typedef enum {
+    PRESET_MODE_OFF = 0,
+    PRESET_MODE_LOAD,
+    PRESET_MODE_SAVE
+} SI_PresetMode_t;
+
+static SI_PresetMode_t gPresetState = PRESET_MODE_OFF;
+
+static void SI_SafeEEPROMWrite(uint32_t Address, const void *pBuffer, uint8_t Size) {
+    const uint8_t *p = (const uint8_t *)pBuffer;
+    for (uint8_t i = 0; i < Size; i++) {
+        EEPROM_WriteBuffer(Address + i, p + i, 1);
+    }
+}
+
 #include "app/spectrum.h"
 typedef struct // Band data
 {
@@ -207,6 +229,48 @@ static void resetBFO() {
 
 }
 
+static void SI_SavePreset(uint8_t slot) {
+    if (slot < 1 || slot > 9) return;
+    SI_Preset_t preset;
+    preset.frequency = siCurrentFreq;
+    preset.mode = si4732mode;
+    uint16_t addr = 0x1F50 + (slot - 1) * sizeof(SI_Preset_t);
+    SI_SafeEEPROMWrite(addr, &preset, sizeof(SI_Preset_t));
+    gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
+}
+
+static void SI_LoadPreset(uint8_t slot) {
+    if (slot < 1 || slot > 9) return;
+    SI_Preset_t preset;
+    uint16_t addr = 0x1F50 + (slot - 1) * sizeof(SI_Preset_t);
+    EEPROM_ReadBuffer(addr, &preset, sizeof(SI_Preset_t));
+    
+    if (preset.frequency != 0xFFFF && preset.frequency > 0) {
+        if (preset.mode < 5) {
+            if (si4732mode != preset.mode) {
+                if (preset.mode == SI47XX_FM) {
+                    divider = 1000;
+                } else {
+                    divider = 100;
+                }
+                SI47XX_SwitchMode(preset.mode);
+                if (preset.mode == SI47XX_FM) {
+                    step = 10;
+                } else if (preset.mode == SI47XX_AM) {
+                    step = 5;
+                } else {
+                    step = 1;
+                }
+            }
+            tune(preset.frequency * divider);
+            resetBFO();
+            gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
+            return;
+        }
+    }
+    gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+}
+
 
 void SI_deinit() {
     SI47XX_PowerDown();
@@ -298,6 +362,13 @@ void SI4732_Display() {
             GUI_DisplaySmallest(String, 0, 15 - 8, false, true);
         }
 
+        if (gPresetState == PRESET_MODE_LOAD) {
+            memset(gFrameBuffer[6] + 20, 0xFF, 88);
+            GUI_DisplaySmallest(" LOAD PRESET (1-9) ", 26, 48, false, false);
+        } else if (gPresetState == PRESET_MODE_SAVE) {
+            memset(gFrameBuffer[6] + 20, 0xFF, 88);
+            GUI_DisplaySmallest(" SAVE PRESET (1-9) ", 26, 48, false, false);
+        }
     }
 
     ST7565_BlitFullScreen();
@@ -380,6 +451,32 @@ void HandleUserInput() {
 }
 
 void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_Code_t key_prev) {
+    if (gPresetState != PRESET_MODE_OFF) {
+        if (KEY_TYPE3) {
+            if (key_prev >= KEY_1 && key_prev <= KEY_9) {
+                if (gPresetState == PRESET_MODE_LOAD) {
+                    SI_LoadPreset(key_prev - KEY_1 + 1);
+                } else {
+                    SI_SavePreset(key_prev - KEY_1 + 1);
+                }
+            }
+            gPresetState = PRESET_MODE_OFF;
+            BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+            display_flag = true;
+        } else if (KEY_TYPE1) {
+            if (key >= KEY_1 && key <= KEY_9) {
+                if (gPresetState == PRESET_MODE_LOAD) {
+                    SI_LoadPreset(key - KEY_1 + 1);
+                } else {
+                    SI_SavePreset(key - KEY_1 + 1);
+                }
+                gPresetState = PRESET_MODE_OFF;
+                BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+                display_flag = true;
+            }
+        }
+        return;
+    }
     // up-down keys
     if (INPUT_STATE && KEY_TYPE3) {
         OnKeyDownFreqInput(key_prev);
@@ -410,6 +507,18 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
                 if (key == KEY_2 ? att < 37 : att > 0) {
                     key == KEY_2 ? att++ : att--;
                     SI47XX_SetAutomaticGainControl(key == KEY_2 ? 1 : att > 0, att);
+                }
+                return ;
+
+            case KEY_STAR:
+                if (KEY_TYPE3) {
+                    gPresetState = PRESET_MODE_LOAD;
+                    BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
+                    gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
+                } else if (KEY_TYPE1) {
+                    gPresetState = PRESET_MODE_SAVE;
+                    BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
+                    gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
                 }
                 return ;
 
@@ -557,6 +666,7 @@ void SI4732_Main() {
     SYSCON_DEV_CLK_GATE= SYSCON_DEV_CLK_GATE & ( ~(1 << 22));
 #endif
 
+    gPresetState = PRESET_MODE_OFF;
     light_open();
     SI_init();
 
