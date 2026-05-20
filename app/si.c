@@ -78,6 +78,7 @@ typedef enum {
 
 static SI_PresetMode_t gPresetState = PRESET_MODE_OFF;
 static uint8_t gPresetIndex = 0;
+static bool gPresetKeyWaitingRelease = false;
 
 static void SI_SafeEEPROMWrite(uint32_t Address, const void *pBuffer, uint8_t Size) {
     const uint8_t *p = (const uint8_t *)pBuffer;
@@ -480,6 +481,12 @@ void HandleUserInput() {
 
 void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_Code_t key_prev) {
     if (gPresetState != PRESET_MODE_OFF) {
+        if (gPresetKeyWaitingRelease) {
+            if (key == KEY_INVALID) {
+                gPresetKeyWaitingRelease = false;
+            }
+            return;
+        }
         KEY_Code_t k = KEY_TYPE3 ? key_prev : key;
         if (KEY_TYPE1 || KEY_TYPE3) {
             switch (k) {
@@ -569,10 +576,14 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
             case KEY_STAR:
                 if (KEY_TYPE3) {
                     gPresetState = PRESET_MODE_LOAD;
+                    gPresetIndex = 0;
+                    gPresetKeyWaitingRelease = true;
                     BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
                     gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
                 } else if (KEY_TYPE1) {
                     gPresetState = PRESET_MODE_SAVE;
+                    gPresetIndex = 0;
+                    gPresetKeyWaitingRelease = true;
                     BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
                     gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
                 }
