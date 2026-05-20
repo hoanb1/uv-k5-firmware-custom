@@ -600,12 +600,6 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
 
             case KEY_STAR:
                 if (KEY_TYPE3) {
-                    gPresetState = PRESET_MODE_LOAD;
-                    gPresetIndex = 0;
-                    gPresetKeyWaitingRelease = true;
-                    BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, true);
-                    gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
-                } else if (KEY_TYPE1) {
                     gPresetState = PRESET_MODE_SAVE;
                     gPresetIndex = 0;
                     gPresetKeyWaitingRelease = true;
