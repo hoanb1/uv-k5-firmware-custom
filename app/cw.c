@@ -301,8 +301,8 @@ void CW_Display(void) {
 
     memset(gFrameBuffer, 0, sizeof(gFrameBuffer));
 
-    // Row 0: header
-    UI_PrintStringSmall("-CW- SK1=dit SK2=dah", 0, 127, 0);
+    // Row 0: header (shortened to prevent overflow crash)
+    UI_PrintStringSmall("-CW- SK1=. SK2=-", 0, 127, 0);
 
     // Row 2: WPM + status
     uint8_t n  = rx_noise8 >> 3u;
@@ -329,8 +329,9 @@ void CW_Display(void) {
     // Row 4: decoded text
     UI_PrintStringSmall(rx_buf, 0, 127, 4);
 
-    // Row 6: UP/DN=WPM EXIT=quit
-    UI_PrintStringSmall("UP/DN=WPM  EXIT=quit", 0, 127, 6);
+    // Row 6: UP/DN=WPM EXIT=quit (split into 2 columns to prevent centering overflow crash)
+    UI_PrintStringSmall("UP/DN=WPM", 0, 63, 6);
+    UI_PrintStringSmall("EXIT=QUIT", 64, 127, 6);
 
     ST7565_BlitFullScreen();
 }
