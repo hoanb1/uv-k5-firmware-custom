@@ -292,15 +292,11 @@ void SI4732_Display() {
 
     memset(gStatusLine, 0, sizeof(gStatusLine));
     if (gPresetState != PRESET_MODE_OFF) {
-        if (gPresetState == PRESET_MODE_LOAD) {
-            UI_PrintStringSmall("LOAD PRESET", 0, 127, 0);
-        } else {
-            UI_PrintStringSmall("SAVE PRESET", 0, 127, 0);
-        }
+        GUI_DisplaySmallest(gPresetState == PRESET_MODE_LOAD ? "LOAD PRESET" : "SAVE PRESET", 38, 1, true, true);
 
-        // Separator line under Row 0
+        // Separator line under status line
         for (uint8_t x = 0; x < 128; x++) {
-            gFrameBuffer[0][x] |= 0x80;
+            gFrameBuffer[0][x] |= 0x01;
         }
 
         for (uint8_t i = 0; i < 9; i++) {
@@ -324,7 +320,7 @@ void SI4732_Display() {
                 lineStr[1] = ' ';
             }
 
-            GUI_DisplaySmallest(lineStr, 10, 9 + i * 6, false, true);
+            GUI_DisplaySmallest(lineStr, 10, 2 + i * 6, false, true);
         }
     } else if (INPUT_STATE) {
         UI_PrintStringSmall(freqInputString, 2, 127, 1);
@@ -401,6 +397,9 @@ void SI4732_Display() {
     }
 
     ST7565_BlitFullScreen();
+    if (gPresetState != PRESET_MODE_OFF) {
+        ST7565_BlitStatusLine();
+    }
 }
 
 
