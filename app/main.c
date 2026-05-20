@@ -56,6 +56,9 @@
 #ifdef ENABLE_DOPPLER
 #include "app/doppler.h"
 #endif
+#ifdef ENABLE_CW
+#include "app/cw.h"
+#endif
 
 void toggle_chan_scanlist(void) {    // toggle the selected channels scanlist setting
     if (SCANNER_IsScanning())
@@ -250,6 +253,7 @@ gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
             gRequestSaveChannel = 1;
             break;
 
+
         case KEY_9:
 #ifdef ENABLE_RS41
             APP_RunRadiosonde();
@@ -288,6 +292,18 @@ static void MAIN_Key_DIGITS(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) {
 
         if (bKeyPressed) {
             if (gScreenToDisplay == DISPLAY_MAIN) {
+#ifdef ENABLE_CW
+                // Long Press 9 = toggle CW mode (F+9 remains RS41)
+                if (Key == KEY_9) {
+                    if (gCW_Active) CW_Deinit();
+                    else            CW_Init();
+                    gBeepToPlay    = BEEP_1KHZ_60MS_OPTIONAL;
+                    gUpdateDisplay = true;
+                    gWasFKeyPressed = false;
+                    gUpdateStatus   = true;
+                    return;
+                }
+#endif
                 if (gInputBoxIndex > 0) {    // delete any inputted chars
                     gInputBoxIndex = 0;
                     gRequestDisplayScreen = DISPLAY_MAIN;
@@ -785,6 +801,13 @@ cnt_i--;
 void MAIN_ProcessKeys(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) {
     if (bKeyPressed)
         last_rx_vfo = -1;
+#ifdef ENABLE_CW
+    if (gCW_Active) {
+        CW_ProcessKey(Key, bKeyPressed, bKeyHeld);
+        gUpdateDisplay = true;
+        return;
+    }
+#endif
 #ifdef ENABLE_FMRADIO
     if (gFmRadioMode && Key != KEY_PTT && Key != KEY_EXIT)
     {

@@ -81,6 +81,9 @@
 #ifdef ENABLE_DOPPLER
 #include "app/doppler.h"
 #endif
+#ifdef ENABLE_CW
+#include "app/cw.h"
+#endif
 
 #include "ui/battery.h"
 #include "ui/inputbox.h"
@@ -1236,6 +1239,10 @@ gAlarmState = ALARM_STATE_SITE_ALARM;
 
 
     SCANNER_TimeSlice10ms();
+
+#ifdef ENABLE_CW
+    CW_Tick();
+#endif
 
 #ifdef ENABLE_AIRCOPY
     if (gScreenToDisplay == DISPLAY_AIRCOPY && gAircopyState == AIRCOPY_TRANSFER && gAirCopyIsSendMode == 1)

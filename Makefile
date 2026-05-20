@@ -71,6 +71,7 @@ ENABLE_4732SSB =0
 
 ENABLE_DOPPLER               =0
 ENABLE_RS41                  =0
+ENABLE_CW                    ?= 1  # CW Morse decoder+keyer (no hardware mod)
 #############################################################
 PACKED_FILE_SUFFIX = UVK5_MOD
 
@@ -166,6 +167,9 @@ ifeq ($(ENABLE_RS41),1)
 endif
 ifeq ($(ENABLE_DOPPLER),1)
     OBJS += app/doppler.o
+endif
+ifeq ($(ENABLE_CW),1)
+    OBJS += app/cw.o
 endif
 # Drivers
 OBJS += driver/adc.o
@@ -392,6 +396,9 @@ ifeq ($(ENABLE_MESSENGER),1)
 endif
 ifeq ($(ENABLE_DOPPLER),1)
 	CFLAGS  += -DENABLE_DOPPLER
+endif
+ifeq ($(ENABLE_CW),1)
+	CFLAGS  += -DENABLE_CW
 endif
 ifeq ($(ENABLE_RS41),1)
 	CFLAGS += -DENABLE_RS41

@@ -43,6 +43,9 @@
 #include "ui/menu.h"
 #include "ui/scanner.h"
 #include "ui/ui.h"
+#ifdef ENABLE_CW
+#include "app/cw.h"
+#endif
 
 GUI_DisplayType_t gScreenToDisplay;
 GUI_DisplayType_t gRequestDisplayScreen = DISPLAY_INVALID;
@@ -73,6 +76,12 @@ void (*UI_DisplayFunctions[])(void) = {
 static_assert(ARRAY_SIZE(UI_DisplayFunctions) == DISPLAY_N_ELEM);
 
 void GUI_DisplayScreen(void) {
+#ifdef ENABLE_CW
+    if (gCW_Active) {
+        CW_Display();
+        return;
+    }
+#endif
     if (gScreenToDisplay != DISPLAY_INVALID) {
         UI_DisplayFunctions[gScreenToDisplay]();
     }
