@@ -119,7 +119,7 @@ make clean && make build ENABLE_RS41=1 ENABLE_4732=1 ENABLE_4732SSB=1
 |---|---|
 | **0x01D00 ~ 0x02000** | Rarely changed. |
 | **0x01D00 ~ 0x01E00<br/>0x1F90 ~ 0x01FF0** | **MDC1200** - 22 MDC contacts. Each contact occupies 16B (first 2B: MDC ID, next 14B: contact name). |
-| **0x01F50 ~ 0x01F6B** | **SI4732 Presets** - 9 quick-access slots (3 bytes each: 2B frequency, 1B modulation mode). |
+| **0x01900 ~ 0x0193B** | **SI4732 Presets** - 20 quick-access slots (3 bytes each: 2B frequency, 1B modulation mode). |
 | **0x01F70 ~ 0x01F7F** | **Radiosonde Tracker** - Saved telemetry data of the last decoded weather balloon. |
 | **0x01FFF** | **MDC1200** - Number of MDC contacts. |
 | **0x01FFD ~ 0x01FFE** | **MDC1200** - MDC ID. |

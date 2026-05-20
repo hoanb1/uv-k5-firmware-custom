@@ -76,6 +76,9 @@ typedef enum {
     PRESET_MODE_SAVE
 } SI_PresetMode_t;
 
+#define EEPROM_PRESETS_ADDR 0x1900
+#define MAX_PRESETS 20
+
 static SI_PresetMode_t gPresetState = PRESET_MODE_OFF;
 static uint8_t gPresetIndex = 0;
 static bool gPresetKeyWaitingRelease = false;
@@ -232,19 +235,19 @@ static void resetBFO() {
 }
 
 static void SI_SavePreset(uint8_t slot) {
-    if (slot < 1 || slot > 9) return;
+    if (slot < 1 || slot > MAX_PRESETS) return;
     SI_Preset_t preset;
     preset.frequency = siCurrentFreq;
     preset.mode = si4732mode;
-    uint16_t addr = 0x1F50 + (slot - 1) * sizeof(SI_Preset_t);
+    uint16_t addr = EEPROM_PRESETS_ADDR + (slot - 1) * sizeof(SI_Preset_t);
     SI_SafeEEPROMWrite(addr, &preset, sizeof(SI_Preset_t));
     gBeepToPlay = BEEP_1KHZ_60MS_OPTIONAL;
 }
 
 static void SI_LoadPreset(uint8_t slot) {
-    if (slot < 1 || slot > 9) return;
+    if (slot < 1 || slot > MAX_PRESETS) return;
     SI_Preset_t preset;
-    uint16_t addr = 0x1F50 + (slot - 1) * sizeof(SI_Preset_t);
+    uint16_t addr = EEPROM_PRESETS_ADDR + (slot - 1) * sizeof(SI_Preset_t);
     EEPROM_ReadBuffer(addr, &preset, sizeof(SI_Preset_t));
     
     if (preset.frequency != 0xFFFF && preset.frequency > 0) {
@@ -299,9 +302,15 @@ void SI4732_Display() {
             gFrameBuffer[0][x] |= 0x01;
         }
 
+        uint8_t start = 0;
+        if (gPresetIndex >= 9) {
+            start = gPresetIndex - 8;
+        }
+
         for (uint8_t i = 0; i < 9; i++) {
+            uint8_t idx = start + i;
             SI_Preset_t preset;
-            uint16_t addr = 0x1F50 + i * sizeof(SI_Preset_t);
+            uint16_t addr = EEPROM_PRESETS_ADDR + idx * sizeof(SI_Preset_t);
             EEPROM_ReadBuffer(addr, &preset, sizeof(SI_Preset_t));
 
             char lineStr[32];
@@ -310,12 +319,12 @@ void SI4732_Display() {
                 uint32_t f = preset.frequency * div;
                 uint16_t fp1 = f / 100000;
                 uint16_t fp2 = f / 100 % 1000;
-                sprintf(lineStr, "  %u: %3u.%03u %s", i + 1, fp1, fp2, SI47XX_MODE_NAMES[preset.mode]);
+                sprintf(lineStr, "  %2u: %3u.%03u %s", idx + 1, fp1, fp2, SI47XX_MODE_NAMES[preset.mode]);
             } else {
-                sprintf(lineStr, "  %u: -- Empty --", i + 1);
+                sprintf(lineStr, "  %2u: -- Empty --", idx + 1);
             }
 
-            if (i == gPresetIndex) {
+            if (idx == gPresetIndex) {
                 lineStr[0] = '>';
                 lineStr[1] = ' ';
             }
@@ -498,12 +507,12 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
                     if (gPresetIndex > 0) {
                         gPresetIndex--;
                     } else {
-                        gPresetIndex = 8;
+                        gPresetIndex = MAX_PRESETS - 1;
                     }
                     display_flag = true;
                     break;
                 case KEY_DOWN:
-                    if (gPresetIndex < 8) {
+                    if (gPresetIndex < MAX_PRESETS - 1) {
                         gPresetIndex++;
                     } else {
                         gPresetIndex = 0;
