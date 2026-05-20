@@ -302,23 +302,9 @@ void SI4732_Display() {
             gFrameBuffer[0][x] |= 0x80;
         }
 
-        // Separator line above Row 6
-        for (uint8_t x = 0; x < 128; x++) {
-            gFrameBuffer[5][x] |= 0x80;
-        }
-
-        uint8_t start_idx = 0;
-        if (gPresetIndex >= 3) {
-            start_idx = gPresetIndex - 2;
-            if (start_idx > 4) {
-                start_idx = 4;
-            }
-        }
-
-        for (uint8_t i = 0; i < 5; i++) {
-            uint8_t slot_idx = start_idx + i;
+        for (uint8_t i = 0; i < 9; i++) {
             SI_Preset_t preset;
-            uint16_t addr = 0x1F50 + slot_idx * sizeof(SI_Preset_t);
+            uint16_t addr = 0x1F50 + i * sizeof(SI_Preset_t);
             EEPROM_ReadBuffer(addr, &preset, sizeof(SI_Preset_t));
 
             char lineStr[32];
@@ -327,21 +313,18 @@ void SI4732_Display() {
                 uint32_t f = preset.frequency * div;
                 uint16_t fp1 = f / 100000;
                 uint16_t fp2 = f / 100 % 1000;
-                sprintf(lineStr, "  %u: %3u.%03u %s", slot_idx + 1, fp1, fp2, SI47XX_MODE_NAMES[preset.mode]);
+                sprintf(lineStr, "  %u: %3u.%03u %s", i + 1, fp1, fp2, SI47XX_MODE_NAMES[preset.mode]);
             } else {
-                sprintf(lineStr, "  %u: -- Empty --", slot_idx + 1);
+                sprintf(lineStr, "  %u: -- Empty --", i + 1);
             }
 
-            if (slot_idx == gPresetIndex) {
+            if (i == gPresetIndex) {
                 lineStr[0] = '>';
                 lineStr[1] = ' ';
             }
 
-            UI_PrintStringSmall(lineStr, 2, 0, 1 + i);
+            GUI_DisplaySmallest(lineStr, 10, 9 + i * 6, false, true);
         }
-
-        UI_PrintStringSmall("UP/DN:Sel  MENU:Confirm", 2, 0, 6);
-        UI_PrintStringSmall("EXIT:Back", 2, 0, 7);
     } else if (INPUT_STATE) {
         UI_PrintStringSmall(freqInputString, 2, 127, 1);
 
