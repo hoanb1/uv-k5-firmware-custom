@@ -17,6 +17,6 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - **SI4732 Preset Interface & Shortcuts**:
   - Replaced the simple key-overlay modes with a dedicated, scrollable full-screen **Preset UI** displaying the 20 preset slots, showing frequency, mode, and whether each slot is empty.
-  - Short-press `*` enters **SAVE PRESET** screen (long-press `*` action is removed). F+0 is used to enter **LOAD PRESET** screen.
+  - Short-press `*` enters **SAVE PRESET** screen (long-press `*` action is removed). F+0 is used to enter **Radio List** screen.
   - Supports browsing (duyệt) presets using the `<` and `>` (`KEY_UP` / `KEY_DOWN`) keys, confirming/triggering the load or save action with the `MENU` key, and canceling/returning to the main screen using the `EXIT` or `*` keys.
   - Quick-jumping to a specific preset slot by pressing number keys `1`-`9` to focus the selection.

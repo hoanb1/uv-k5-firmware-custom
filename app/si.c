@@ -295,7 +295,11 @@ void SI4732_Display() {
 
     memset(gStatusLine, 0, sizeof(gStatusLine));
     if (gPresetState != PRESET_MODE_OFF) {
-        GUI_DisplaySmallest(gPresetState == PRESET_MODE_LOAD ? "LOAD PRESET" : "SAVE PRESET", 38, 1, true, true);
+        if (gPresetState == PRESET_MODE_LOAD) {
+            GUI_DisplaySmallest("Radio List", 44, 1, true, true);
+        } else {
+            GUI_DisplaySmallest("SAVE PRESET", 42, 1, true, true);
+        }
 
         // Separator line under status line
         for (uint8_t x = 0; x < 128; x++) {
