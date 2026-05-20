@@ -579,6 +579,7 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
                 }
                 return ;
 
+            case KEY_MENU:
             case KEY_STAR:
                 if (KEY_TYPE3) {
                     gPresetState = PRESET_MODE_SAVE;
