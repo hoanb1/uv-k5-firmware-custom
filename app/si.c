@@ -448,14 +448,19 @@ void HandleUserInput() {
     bool KEY_TYPE1 = false, KEY_TYPE2 = false, KEY_TYPE3 = false;
     
     if (kbds.current == KEY_INVALID) {
-        if (kbds.counter > 2 && kbds.counter <= 6) {
-            
-            KEY_TYPE3 = true;
+        if (kbds.counter > 2) {
+            if (kbds.counter >= 10) {
+                KEY_TYPE1 = true;
+            } else {
+                KEY_TYPE3 = true;
+            }
         }
         kbds.counter = 0;
     } else {
         if (kbds.counter >= 6 && kbds.counter % 2 == 1) {
-            KEY_TYPE1 = true;
+            if (kbds.current != KEY_STAR) {
+                KEY_TYPE1 = true;
+            }
         }
         if (kbds.current == kbds.prev) {
             
@@ -546,7 +551,7 @@ void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_
         return ;
     }
     if (KEY_TYPE1 || KEY_TYPE3) {
-        if (KEY_TYPE3)key = key_prev;
+        if (KEY_TYPE3 || key == KEY_INVALID)key = key_prev;
         switch (key) {
             case KEY_UP:
             case KEY_DOWN:
