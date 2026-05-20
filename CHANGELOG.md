@@ -15,7 +15,8 @@ All notable changes to this project will be documented in this file.
   - Added clear physical feedback: the green status LED glows when the preset loading or saving interface is active.
 
 ### Changed
-- **SI4732 Shortcuts**:
-  - Short-pressing the `*` key opens the **Load Preset** menu (press `1`-`9` to load).
-  - Long-pressing the `*` key opens the **Save Preset** menu (press `1`-`9` to save).
-  - Pressing `EXIT` or `*` cancels and exits preset mode.
+- **SI4732 Preset Interface & Shortcuts**:
+  - Replaced the simple key-overlay modes with a dedicated, scrollable full-screen **Preset UI** displaying the 9 preset slots, showing frequency, mode, and whether each slot is empty.
+  - Short-press `*` enters **LOAD PRESET** screen, and long-press `*` enters **SAVE PRESET** screen.
+  - Supports browsing (duyệt) presets using the `<` and `>` (`KEY_UP` / `KEY_DOWN`) keys, confirming/triggering the load or save action with the `MENU` key, and canceling/returning to the main screen using the `EXIT` or `*` keys.
+  - Quick-jumping to a specific preset slot by pressing number keys `1`-`9` to focus the selection.

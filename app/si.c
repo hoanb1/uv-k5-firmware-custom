@@ -77,6 +77,7 @@ typedef enum {
 } SI_PresetMode_t;
 
 static SI_PresetMode_t gPresetState = PRESET_MODE_OFF;
+static uint8_t gPresetIndex = 0;
 
 static void SI_SafeEEPROMWrite(uint32_t Address, const void *pBuffer, uint8_t Size) {
     const uint8_t *p = (const uint8_t *)pBuffer;
@@ -289,7 +290,59 @@ void SI4732_Display() {
     UI_DisplayClear();
 
     memset(gStatusLine, 0, sizeof(gStatusLine));
-    if (INPUT_STATE) {
+    if (gPresetState != PRESET_MODE_OFF) {
+        if (gPresetState == PRESET_MODE_LOAD) {
+            UI_PrintStringSmall("LOAD PRESET", 0, 127, 0);
+        } else {
+            UI_PrintStringSmall("SAVE PRESET", 0, 127, 0);
+        }
+
+        // Separator line under Row 0
+        for (uint8_t x = 0; x < 128; x++) {
+            gFrameBuffer[0][x] |= 0x80;
+        }
+
+        // Separator line above Row 6
+        for (uint8_t x = 0; x < 128; x++) {
+            gFrameBuffer[5][x] |= 0x80;
+        }
+
+        uint8_t start_idx = 0;
+        if (gPresetIndex >= 3) {
+            start_idx = gPresetIndex - 2;
+            if (start_idx > 4) {
+                start_idx = 4;
+            }
+        }
+
+        for (uint8_t i = 0; i < 5; i++) {
+            uint8_t slot_idx = start_idx + i;
+            SI_Preset_t preset;
+            uint16_t addr = 0x1F50 + slot_idx * sizeof(SI_Preset_t);
+            EEPROM_ReadBuffer(addr, &preset, sizeof(SI_Preset_t));
+
+            char lineStr[32];
+            if (preset.frequency != 0xFFFF && preset.frequency > 0 && preset.mode < 5) {
+                uint32_t div = (preset.mode == SI47XX_FM) ? 1000 : 100;
+                uint32_t f = preset.frequency * div;
+                uint16_t fp1 = f / 100000;
+                uint16_t fp2 = f / 100 % 1000;
+                sprintf(lineStr, "  %u: %3u.%03u %s", slot_idx + 1, fp1, fp2, SI47XX_MODE_NAMES[preset.mode]);
+            } else {
+                sprintf(lineStr, "  %u: -- Empty --", slot_idx + 1);
+            }
+
+            if (slot_idx == gPresetIndex) {
+                lineStr[0] = '>';
+                lineStr[1] = ' ';
+            }
+
+            UI_PrintStringSmall(lineStr, 2, 0, 1 + i);
+        }
+
+        UI_PrintStringSmall("UP/DN:Sel  MENU:Confirm", 2, 0, 6);
+        UI_PrintStringSmall("EXIT:Back", 2, 0, 7);
+    } else if (INPUT_STATE) {
         UI_PrintStringSmall(freqInputString, 2, 127, 1);
 
     } else {
@@ -360,14 +413,6 @@ void SI4732_Display() {
             sprintf(String, "SNR %u", rsqStatus.resp.SNR);
 
             GUI_DisplaySmallest(String, 0, 15 - 8, false, true);
-        }
-
-        if (gPresetState == PRESET_MODE_LOAD) {
-            memset(gFrameBuffer[6] + 20, 0xFF, 88);
-            GUI_DisplaySmallest(" LOAD PRESET (1-9) ", 26, 48, false, false);
-        } else if (gPresetState == PRESET_MODE_SAVE) {
-            memset(gFrameBuffer[6] + 20, 0xFF, 88);
-            GUI_DisplaySmallest(" SAVE PRESET (1-9) ", 26, 48, false, false);
         }
     }
 
@@ -452,27 +497,55 @@ void HandleUserInput() {
 
 void SI_key(KEY_Code_t key, bool KEY_TYPE1, bool KEY_TYPE2, bool KEY_TYPE3, KEY_Code_t key_prev) {
     if (gPresetState != PRESET_MODE_OFF) {
-        if (KEY_TYPE3) {
-            if (key_prev >= KEY_1 && key_prev <= KEY_9) {
-                if (gPresetState == PRESET_MODE_LOAD) {
-                    SI_LoadPreset(key_prev - KEY_1 + 1);
-                } else {
-                    SI_SavePreset(key_prev - KEY_1 + 1);
-                }
-            }
-            gPresetState = PRESET_MODE_OFF;
-            BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
-            display_flag = true;
-        } else if (KEY_TYPE1) {
-            if (key >= KEY_1 && key <= KEY_9) {
-                if (gPresetState == PRESET_MODE_LOAD) {
-                    SI_LoadPreset(key - KEY_1 + 1);
-                } else {
-                    SI_SavePreset(key - KEY_1 + 1);
-                }
-                gPresetState = PRESET_MODE_OFF;
-                BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
-                display_flag = true;
+        KEY_Code_t k = KEY_TYPE3 ? key_prev : key;
+        if (KEY_TYPE1 || KEY_TYPE3) {
+            switch (k) {
+                case KEY_UP:
+                    if (gPresetIndex > 0) {
+                        gPresetIndex--;
+                    } else {
+                        gPresetIndex = 8;
+                    }
+                    display_flag = true;
+                    break;
+                case KEY_DOWN:
+                    if (gPresetIndex < 8) {
+                        gPresetIndex++;
+                    } else {
+                        gPresetIndex = 0;
+                    }
+                    display_flag = true;
+                    break;
+                case KEY_MENU:
+                    if (gPresetState == PRESET_MODE_LOAD) {
+                        SI_LoadPreset(gPresetIndex + 1);
+                    } else {
+                        SI_SavePreset(gPresetIndex + 1);
+                    }
+                    gPresetState = PRESET_MODE_OFF;
+                    BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+                    display_flag = true;
+                    break;
+                case KEY_EXIT:
+                case KEY_STAR:
+                    gPresetState = PRESET_MODE_OFF;
+                    BK4819_ToggleGpioOut(BK4819_GPIO6_PIN2_GREEN, false);
+                    display_flag = true;
+                    break;
+                case KEY_1:
+                case KEY_2:
+                case KEY_3:
+                case KEY_4:
+                case KEY_5:
+                case KEY_6:
+                case KEY_7:
+                case KEY_8:
+                case KEY_9:
+                    gPresetIndex = k - KEY_1;
+                    display_flag = true;
+                    break;
+                default:
+                    break;
             }
         }
         return;

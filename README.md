@@ -79,8 +79,8 @@ Requires a hardware mod (tapping the discriminator output from BK4819 Pin 8 to M
 | **Short press `Side Key 1`, Short press `Side Key 2`** | Change BFO in SSB mode |
 | **Short press `5`** | Enter frequency, **short press `*`** for decimal point, **short press `MENU`** to confirm |
 | **Short press `0`** | Switch mode (AM/FM/SSB), **short press `F`** to switch LSB/USB |
-| **Short press `*`** | **Load Preset** (Select slot 1-9 to load frequency and mode). |
-| **Long press `*`** | **Save Preset** (Select slot 1-9 to save current frequency and mode). |
+| **Short press `*`** | **Load Preset Screen** (Use `<` / `>` to browse list, `MENU` to confirm load, `1`-`9` to jump, `EXIT` to cancel). |
+| **Long press `*`** | **Save Preset Screen** (Use `<` / `>` to browse list, `MENU` to confirm save, `1`-`9` to jump, `EXIT` to cancel). |
 | **Short press `1`, Short press `7`** | Change step frequency |
 | **Short press `4`** | Toggle signal strength display |
 | **Short press `6`** | Change bandwidth |
