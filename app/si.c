@@ -220,6 +220,11 @@ static void resetBFO() {
 
 static void SI_SavePreset(uint8_t slot) {
     if (slot < 1 || slot > MAX_PRESETS) return;
+    // Validate before writing: reject zero/invalid frequency or unknown mode
+    if (siCurrentFreq == 0 || siCurrentFreq == 0xFFFF || si4732mode >= 5) {
+        gBeepToPlay = BEEP_500HZ_60MS_DOUBLE_BEEP_OPTIONAL;
+        return;
+    }
     SI_Preset_t preset;
     preset.frequency = siCurrentFreq;
     preset.mode = si4732mode;

@@ -680,20 +680,28 @@ void APP_RunRadiosonde(void)
     // Save final radiosonde state to EEPROM on clean exit
     SavedSonde_t final_save;
     final_save.frequency = gSondeApp.frequency;
-    
+
     // Read previous EEPROM data to preserve coordinates if we don't have live ones
     SavedSonde_t old_saved;
     EEPROM_ReadBuffer(0x1F70, &old_saved, sizeof(old_saved));
-    
+
     if (gSondeApp.decoder.data.valid && gSondeApp.decoder.data.lat_1e6 != 0) {
+        // We decoded live GPS data this session — use it
         final_save.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
         final_save.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
-        final_save.alt_cm = gSondeApp.decoder.data.alt_cm;
-    } else {
-        // Preserve old coordinates from EEPROM
+        final_save.alt_cm  = gSondeApp.decoder.data.alt_cm;
+    } else if (old_saved.lat_1e6 >= -90000000  && old_saved.lat_1e6 <= 90000000 &&
+               old_saved.lon_1e6 >= -180000000 && old_saved.lon_1e6 <= 180000000 &&
+               old_saved.lat_1e6 != 0 && old_saved.lon_1e6 != 0) {
+        // Preserve valid coordinates that were previously saved
         final_save.lat_1e6 = old_saved.lat_1e6;
         final_save.lon_1e6 = old_saved.lon_1e6;
-        final_save.alt_cm = old_saved.alt_cm;
+        final_save.alt_cm  = old_saved.alt_cm;
+    } else {
+        // No valid data anywhere — store zeros so the load guard rejects it next time
+        final_save.lat_1e6 = 0;
+        final_save.lon_1e6 = 0;
+        final_save.alt_cm  = 0;
     }
     EEPROM_WriteBuffer(0x1F70, &final_save, 8);
     EEPROM_WriteBuffer(0x1F78, ((uint8_t*)&final_save) + 8, 8);
