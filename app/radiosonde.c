@@ -6,6 +6,16 @@
 #include "radiosonde.h"
 #include "rs41.h"
 #include "../driver/eeprom.h"
+#include "../driver/system.h"  // SYSTEM_DelayMs — already included below, but needed for safe write
+
+// Write EEPROM byte-by-byte to guarantee each byte completes its internal write cycle.
+// Mirrors SI_SafeEEPROMWrite in app/si.c — avoids silent failures with multi-byte writes.
+static void Sonde_SafeEEPROMWrite(uint32_t address, const void *buf, uint8_t size) {
+    const uint8_t *p = (const uint8_t *)buf;
+    for (uint8_t i = 0; i < size; i++) {
+        EEPROM_WriteBuffer(address + i, p + i, 1);
+    }
+}
 
 typedef struct {
     uint32_t frequency;
@@ -600,8 +610,7 @@ void APP_RunRadiosonde(void)
                         saved_data.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
                         saved_data.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
                         saved_data.alt_cm = gSondeApp.decoder.data.alt_cm;
-                        EEPROM_WriteBuffer(0x1F70, &saved_data, 8);
-                        EEPROM_WriteBuffer(0x1F78, ((uint8_t*)&saved_data) + 8, 8);
+                        Sonde_SafeEEPROMWrite(0x1F70, &saved_data, sizeof(saved_data));
                         save_cooldown = 15;
                     }
                 }
@@ -703,8 +712,7 @@ void APP_RunRadiosonde(void)
         final_save.lon_1e6 = 0;
         final_save.alt_cm  = 0;
     }
-    EEPROM_WriteBuffer(0x1F70, &final_save, 8);
-    EEPROM_WriteBuffer(0x1F78, ((uint8_t*)&final_save) + 8, 8);
+    Sonde_SafeEEPROMWrite(0x1F70, &final_save, sizeof(final_save));
 
     // ============================================================
     // Cleanup and hardware restoration on exit
