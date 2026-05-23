@@ -38,7 +38,7 @@ Once the signal is locked, the radio displays live telemetry from the weather ba
 ![Radiosonde Monitor Screen](../images/radiosonde-monitor.jpg)
 
 ### QR Code Fast Export
-To make retrieving the balloon easier, you can switch the display to show a dynamic QR Code *(Note: QR Code rendering is stripped in combined high-feature builds like RS41+SI4732+CW to fit in the tight 64KB flash limit)*. Scanning this code with a smartphone will immediately open your map application (Google Maps, Apple Maps, etc.) with a pin dropped at the balloon's coordinates.
+To make retrieving the balloon easier, you can switch the display to show a dynamic QR Code by pressing key **9** *(Note: QR Code rendering is fully supported and fits in the tight 64KB flash limit using a lightweight miniqr encoder)*. Scanning this code with a smartphone will immediately open your map application (Google Maps, Apple Maps, etc.) with a pin dropped at the balloon's coordinates.
 
 - **Aspect Ratio Correction**: The UV-K5 LCD has rectangular (non-square) pixels. The firmware uses a precise **3x2 integer scaling** algorithm to ensure the QR code renders as a perfect physical square.
 - **Quiet Zones**: The QR code is specifically offset (`offset_y = 6`) to clear the physical black bezel of the screen, ensuring standard white quiet zones are maintained for 100% reliable scanning under any lighting condition.

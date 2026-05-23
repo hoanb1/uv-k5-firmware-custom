@@ -24,6 +24,8 @@ typedef struct {
     int32_t alt_cm;
 } SavedSonde_t;
 
+extern void miniqr_encode(const char *text, uint8_t qrcode[25][25]);
+
 
 
 #include <string.h>
@@ -169,10 +171,15 @@ static void Sonde_DrawData(const RS41_Data_t *d)
     GUI_DisplaySmallest(str, 0, 40, false, true);
 
     // Line 6: GPS Satellites, Time, Battery
-    sprintf(str, "Sat:%2u %02u:%02u:%02u %u.%uV", 
-            d->numSV, d->gps_hour, d->gps_min, d->gps_sec,
-            d->batt_mv / 1000, (d->batt_mv % 1000) / 100);
-    GUI_DisplaySmallest(str, 0, 48, false, true);
+    // When showing restored "LAST GPS" data, time/sat/batt are not saved — show placeholder
+    if (d->sonde_id[0] == 'L' && d->sonde_id[1] == 'A') {  // "LAST GPS"
+        GUI_DisplaySmallest("  --:--:-- (saved pos)", 0, 48, false, true);
+    } else {
+        sprintf(str, "Sat:%2u %02u:%02u:%02u %u.%uV",
+                d->numSV, d->gps_hour, d->gps_min, d->gps_sec,
+                d->batt_mv / 1000, (d->batt_mv % 1000) / 100);
+        GUI_DisplaySmallest(str, 0, 48, false, true);
+    }
 }
 
 static void Sonde_DrawPixel(int x, int y, bool black) {
@@ -193,6 +200,58 @@ static void Sonde_DrawPixel(int x, int y, bool black) {
             gFrameBuffer[line][x] |= (1 << bit);
         } else {
             gFrameBuffer[line][x] &= ~(1 << bit);
+        }
+    }
+}
+
+
+static void Sonde_DrawQRCode(const RS41_Data_t *d) {
+    if (!d->valid || (d->lat_1e6 == 0 && d->lon_1e6 == 0)) {
+        GUI_DisplaySmallest("NO GPS DATA", 0, 24, false, true);
+        return;
+    }
+
+    char url[64];
+    int32_t lat_deg = d->lat_1e6 / 1000000;
+    int32_t lat_frac = d->lat_1e6 % 1000000;
+    if (lat_frac < 0) lat_frac = -lat_frac;
+    int32_t lon_deg = d->lon_1e6 / 1000000;
+    int32_t lon_frac = d->lon_1e6 % 1000000;
+    if (lon_frac < 0) lon_frac = -lon_frac;
+
+    // geo:lat,lon
+    sprintf(url, "geo:%ld.%04ld,%ld.%04ld",
+            (long)lat_deg, (long)(lat_frac / 100),
+            (long)lon_deg, (long)(lon_frac / 100));
+
+    static uint8_t qrcode[25][25];
+    miniqr_encode(url, qrcode);
+
+    int size = 25; // Fixed size for version 2
+    int scale_x = 3; // 3x2 scaling compensates for the tall pixels of the UV-K5 LCD
+    int scale_y = 2;
+
+    // Center the QR code, but shift slightly up to avoid the bottom black bezel
+    // and provide a guaranteed white quiet zone.
+    int offset_x = (128 - size * scale_x) / 2;
+    int offset_y = 6; // 6 pixels of white at top, perfectly centers the 50px tall QR code
+
+    // Draw white background
+    for (int y = 0; y < 64; y++) {
+        for (int x = 0; x < 128; x++) {
+            Sonde_DrawPixel(x, y, false);
+        }
+    }
+
+    // Draw QR
+    for (int y = 0; y < size; y++) {
+        for (int x = 0; x < size; x++) {
+            bool isDark = qrcode[y][x];
+            for (int dy = 0; dy < scale_y; dy++) {
+                for (int dx = 0; dx < scale_x; dx++) {
+                    Sonde_DrawPixel(offset_x + x * scale_x + dx, offset_y + y * scale_y + dy, isDark);
+                }
+            }
         }
     }
 }
@@ -219,7 +278,7 @@ static void Sonde_Render(void)
     const RS41_Data_t *d = RS41_GetData(&gSondeApp.decoder);
 
     if (gSondeApp.mode == SONDE_MODE_QR) {
-        
+        Sonde_DrawQRCode(d);
     } else if (gSondeApp.mode == SONDE_MODE_DIAGNOSTIC) {
         Sonde_DrawDiagnostic();
     } else {
@@ -397,12 +456,15 @@ static bool Sonde_HandleKeys(void)
 
         case KEY_7:
             gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
+            gSondeApp.timeout_frames = 0;
             break;
         case KEY_8:
             gSondeApp.mode = SONDE_MODE_MONITOR;
+            gSondeApp.timeout_frames = 0;
             break;
         case KEY_9:
             gSondeApp.mode = SONDE_MODE_QR;
+            gSondeApp.timeout_frames = 0;
             break;
 
         case KEY_MENU:
@@ -455,9 +517,9 @@ void APP_RunRadiosonde(void)
 
     uint16_t save_cooldown = 0;
 
-    // Restore last saved radiosonde state from EEPROM (0x1F70)
+    // Restore last saved radiosonde state from EEPROM (0x0E28)
     SavedSonde_t saved;
-    EEPROM_ReadBuffer(0x1F70, &saved, sizeof(saved));
+    EEPROM_ReadBuffer(0x0E28, &saved, sizeof(saved));
     if (saved.frequency >= SONDE_FREQ_START && saved.frequency <= SONDE_FREQ_END) {
         gSondeApp.frequency = saved.frequency;
         if (saved.lat_1e6 >= -90000000 && saved.lat_1e6 <= 90000000 &&
@@ -610,7 +672,7 @@ void APP_RunRadiosonde(void)
                         saved_data.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
                         saved_data.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
                         saved_data.alt_cm = gSondeApp.decoder.data.alt_cm;
-                        Sonde_SafeEEPROMWrite(0x1F70, &saved_data, sizeof(saved_data));
+                        Sonde_SafeEEPROMWrite(0x0E28, &saved_data, sizeof(saved_data));
                         save_cooldown = 15;
                     }
                 }
@@ -618,8 +680,11 @@ void APP_RunRadiosonde(void)
                 gSondeApp.timeout_frames++;
                 
                 // Auto-switch back to Diagnostics if signal is lost for 30 seconds
+                // But NOT if we are displaying saved LAST GPS coordinates
                 if (gSondeApp.timeout_frames > 30 && gSondeApp.mode == SONDE_MODE_MONITOR) {
-                    gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
+                    if (strcmp(gSondeApp.decoder.data.sonde_id, "LAST GPS") != 0) {
+                        gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
+                    }
                 }
             }
                          
@@ -692,7 +757,7 @@ void APP_RunRadiosonde(void)
 
     // Read previous EEPROM data to preserve coordinates if we don't have live ones
     SavedSonde_t old_saved;
-    EEPROM_ReadBuffer(0x1F70, &old_saved, sizeof(old_saved));
+    EEPROM_ReadBuffer(0x0E28, &old_saved, sizeof(old_saved));
 
     if (gSondeApp.decoder.data.valid && gSondeApp.decoder.data.lat_1e6 != 0) {
         // We decoded live GPS data this session — use it
@@ -712,7 +777,7 @@ void APP_RunRadiosonde(void)
         final_save.lon_1e6 = 0;
         final_save.alt_cm  = 0;
     }
-    Sonde_SafeEEPROMWrite(0x1F70, &final_save, sizeof(final_save));
+    Sonde_SafeEEPROMWrite(0x0E28, &final_save, sizeof(final_save));
 
     // ============================================================
     // Cleanup and hardware restoration on exit

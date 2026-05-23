@@ -9,11 +9,11 @@ All notable changes to this project will be documented in this file.
   - Added keypad multi-tap character entry using keys `0`-`9` and backspace using the `*` key to compose text messages directly in CW mode.
   - Added automated text-to-CW transmission over the air triggered by the `MENU` key, with visual status (`TX` badge) and LED flashing matching the dits/dahs.
   - Integrated transmission abort functionality via the `EXIT` key.
-  - Stripped the optional QR Code display from the Radiosonde decoder to save flash space.
+  - Restored the optional QR Code display using a lightweight `miniqr` encoder.
   - Optimized code footprint by removing all division/modulus operations from `app/cw.c` (using lookup tables for WPM dit durations and index boundary checks), saving valuable flash space to fit the combined firmware.
   - Added a speaker audio toggle in CW mode using the `F` key to switch between Sound On (`SON`) and Mute (`MUT`). Enables sidetone audio through the speaker during transmission (TX) by dynamically re-enabling/disabling the BK4819 Tone 1 generator, preventing the clicking/ticking artifact caused by hardware mute reset.
 - **Radiosonde Position Persistence**:
-  - The last decoded Radiosonde (RS41) position, altitude, satellite count, and battery voltage are now saved to the EEPROM at address range `0x1F70 - 0x1F7F` upon exit or telemetry update.
+  - The last decoded Radiosonde (RS41) position, altitude, satellite count, and battery voltage are now saved to the EEPROM at address range `0x0E28 - 0x0E37` upon exit or telemetry update (preventing conflicts with factory VOX calibration data).
   - Telemetry parameters are loaded automatically when opening the Radiosonde app, ensuring tracking data is never lost even if the radio is powered down or rebooted.
 - **SI4732 Preset Frequency Channels**:
   - Added 20 quick-access preset slots to save and load SI4732 radio stations (frequency and modulation mode: FM, AM, SSB LSB, USB).

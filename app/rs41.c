@@ -206,7 +206,7 @@ static uint16_t rs41_find_block(const uint8_t *frame, uint8_t blk_id)
     // GPS3 block is 0x7B, length 0x15
     // PTU block is 0x7A, length 0x21
     // STATUS block is 0x79, length 0x28
-    // GPS INFO block is 0x7C, length 0x2A
+    // GPS INFO block is 0x7C, length 0x2A or 0x1E
 
     uint8_t expected_len = 0;
     if (blk_id == RS41_BLK_STATUS) expected_len = 0x28;
@@ -216,8 +216,17 @@ static uint16_t rs41_find_block(const uint8_t *frame, uint8_t blk_id)
 
     // Scan byte-by-byte starting after header (0x39)
     for (uint16_t pos = 0x39; pos < RS41_FRAME_LEN - 4; pos++) {
-        if (frame[pos] == blk_id && frame[pos + 1] == expected_len) {
-            return pos;
+        if (frame[pos] == blk_id) {
+            uint8_t len = frame[pos + 1];
+            if (blk_id == RS41_BLK_GPS_INFO) {
+                if (len == 0x2A || len == 0x1E) {
+                    return pos;
+                }
+            } else {
+                if (len == expected_len) {
+                    return pos;
+                }
+            }
         }
     }
     return 0; // not found
@@ -243,10 +252,9 @@ static void rs41_parse_status(RS41_Decoder_t *dec)
     memcpy(dec->data.sonde_id, &dec->frame[pos + 4], 8);
     dec->data.sonde_id[8] = '\0';
 
-    // Battery voltage: 2 bytes at offset +14 (typical offset in STATUS block)
-    // Value is in mV, little-endian
-    if (pos + 2 + 40 + 2 <= RS41_FRAME_LEN) {
-        dec->data.batt_mv = read_u16_le(&dec->frame[pos + 16]);
+    // Battery voltage: 1 byte at offset +12 (in tenths of a volt)
+    if (pos + 12 < RS41_FRAME_LEN) {
+        dec->data.batt_mv = (uint16_t)dec->frame[pos + 12] * 100;
     }
 }
 

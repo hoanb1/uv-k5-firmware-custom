@@ -32,7 +32,7 @@ enum BOOT_Mode_t
 typedef enum BOOT_Mode_t BOOT_Mode_t;
 
 BOOT_Mode_t BOOT_GetMode(void);
-void BOOT_ProcessMode(/*BOOT_Mode_t Mode*/);
+void BOOT_ProcessMode(BOOT_Mode_t Mode);
 
 #endif
 

@@ -218,6 +218,13 @@ void Main(void) {
         show_uint32(TIMERBASE0_IE,4);
     }
 #endif
+#ifdef ENABLE_AIRCOPY
+    BOOT_Mode_t BootMode = BOOT_GetMode();
+    if (BootMode == BOOT_MODE_AIRCOPY) {
+        BOOT_ProcessMode(BootMode);
+    } else {
+#endif
+
     UI_DisplayWelcome();
 
 #ifdef ENABLE_BOOTLOADER
@@ -265,8 +272,11 @@ void Main(void) {
     }
 #endif
 
-    //	BOOT_ProcessMode();
     GUI_SelectNextDisplay(DISPLAY_MAIN);
+
+#ifdef ENABLE_AIRCOPY
+    }
+#endif
 
     GPIO_ClearBit(&GPIOA->DATA, GPIOA_PIN_VOICE_0);
 

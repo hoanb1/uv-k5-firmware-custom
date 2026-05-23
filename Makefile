@@ -5,7 +5,7 @@
 
 # ---- COMPILER/LINKER OPTIONS ----
 ENABLE_CLANG                  ?= 0
-ENABLE_SWD                    ?= 1
+ENABLE_SWD                    ?= 0
 ENABLE_OVERLAY                ?= 0
 ENABLE_LTO                    ?= 1
 
@@ -26,17 +26,17 @@ ENABLE_BOOTLOADER			 ?= 0
 # ---- CUSTOM MODS ----
 ENABLE_BIG_FREQ               ?= 1
 ENABLE_KEEP_MEM_NAME          ?= 1
-ENABLE_WIDE_RX                ?= 1
+ENABLE_WIDE_RX                ?= 0
 ENABLE_TX_WHEN_AM             ?= 0
 ENABLE_F_CAL_MENU             ?= 0
 ENABLE_CTCSS_TAIL_PHASE_SHIFT ?= 0
 ENABLE_BOOT_BEEPS             ?= 0
 ENABLE_SHOW_CHARGE_LEVEL      ?= 0
 ENABLE_REVERSE_BAT_SYMBOL     ?= 0
-ENABLE_NO_CODE_SCAN_TIMEOUT   ?= 1
-ENABLE_AM_FIX                 ?= 1
-ENABLE_SQUELCH_MORE_SENSITIVE ?= 1
-ENABLE_FASTER_CHANNEL_SCAN    ?= 1
+ENABLE_NO_CODE_SCAN_TIMEOUT   ?= 0
+ENABLE_AM_FIX                 ?= 0
+ENABLE_SQUELCH_MORE_SENSITIVE ?= 0
+ENABLE_FASTER_CHANNEL_SCAN    ?= 0
 ENABLE_RSSI_BAR               ?= 1
 ENABLE_COPY_CHAN_TO_VFO       ?= 0  # disabled: free flash for CW decoder
 ENABLE_SPECTRUM               = 0
@@ -66,12 +66,12 @@ ENABLE_WARNING 				  ?= 0  # disabled: free flash for CW decoder
 ENABLE_MESSENGER              			= 0
 ENABLE_MESSENGER_DELIVERY_NOTIFICATION	= 0
 ENABLE_MESSENGER_NOTIFICATION			= 0
-ENABLE_4732 =0
-ENABLE_4732SSB =0
+ENABLE_4732 =1
+ENABLE_4732SSB =1
 
 ENABLE_DOPPLER               =0
-ENABLE_RS41                  =0
-ENABLE_CW                    ?= 1  # CW Morse decoder+keyer (no hardware mod)
+ENABLE_RS41                  =1
+ENABLE_CW                    ?= 0  # CW Morse decoder+keyer (no hardware mod)
 #############################################################
 PACKED_FILE_SUFFIX = UVK5_MOD
 
@@ -90,7 +90,6 @@ endif
 ifeq ($(ENABLE_RS41),1)
 	ENABLE_MDC1200=0
 	ENABLE_DTMF_CALLING=0
-	ENABLE_UART=0
 	ENABLE_VOX=0
 	ENABLE_FLASHLIGHT=0
 	ENABLE_ALARM=0
@@ -403,7 +402,6 @@ endif
 ifeq ($(ENABLE_RS41),1)
 	CFLAGS += -DENABLE_RS41
 	ENABLE_DTMF_CALLING=0
-	ENABLE_UART=0
 endif
 ifeq ($(ENABLE_4732),1)
 	CFLAGS  += -DENABLE_4732
