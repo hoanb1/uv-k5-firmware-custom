@@ -69,7 +69,7 @@ void SETTINGS_InitEEPROM(void)
     gEeprom.DUAL_WATCH            = (Data[4] < 3) ? Data[4] : DUAL_WATCH_CHAN_A;
     gEeprom.BACKLIGHT_TIME        = (Data[5] < ARRAY_SIZE(gSubMenu_BACKLIGHT)) ? Data[5] : 3;
     gEeprom.TAIL_TONE_ELIMINATION = (Data[6] < 2) ? Data[6] : false;
-    gEeprom.VFO_OPEN              = (Data[7] < 2) ? Data[7] : true;
+    gEeprom.VFO_OPEN              = true;
 
     // 0E80..0E87
     EEPROM_ReadBuffer(0x0E80, Data, 8);
