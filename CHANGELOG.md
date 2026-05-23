@@ -13,8 +13,10 @@ All notable changes to this project will be documented in this file.
   - Optimized code footprint by removing all division/modulus operations from `app/cw.c` (using lookup tables for WPM dit durations and index boundary checks), saving valuable flash space to fit the combined firmware.
   - Added a speaker audio toggle in CW mode using the `F` key to switch between Sound On (`SON`) and Mute (`MUT`). Enables sidetone audio through the speaker during transmission (TX) by dynamically re-enabling/disabling the BK4819 Tone 1 generator, preventing the clicking/ticking artifact caused by hardware mute reset.
 - **Radiosonde Position Persistence**:
-  - The last decoded Radiosonde (RS41) position, altitude, satellite count, and battery voltage are now saved to the EEPROM at address range `0x0E28 - 0x0E37` upon exit or telemetry update (preventing conflicts with factory VOX calibration data).
+  - The last decoded Radiosonde (RS41) position, altitude, satellite count, and battery voltage are now saved to the EEPROM at address range `0x0E30 - 0x0E3F` upon exit or telemetry update (preventing conflicts with VFO channel attributes).
   - Telemetry parameters are loaded automatically when opening the Radiosonde app, ensuring tracking data is never lost even if the radio is powered down or rebooted.
+  - Fixed decoder initialization order where `RS41_Init` was called after the loading sequence, which wiped the restored coordinates back to zero.
+  - Added interrupt protection (`__disable_irq()` / `__enable_irq()`) inside `EEPROM_WriteBuffer` in the EEPROM driver, securing bit-banged write transactions from collision with high-speed ADC polling/interrupts.
 - **SI4732 Preset Frequency Channels**:
   - Added 20 quick-access preset slots to save and load SI4732 radio stations (frequency and modulation mode: FM, AM, SSB LSB, USB).
   - Implemented an optimized 3-byte layout per preset slot to minimize EEPROM usage and prevent conflicts with system settings or MDC1200 contact storage.

@@ -515,11 +515,13 @@ void APP_RunRadiosonde(void)
     gSondeApp.pending_history = '.';
     gSondeApp.history_sample_acc = 0;
 
+    RS41_Init(&gSondeApp.decoder);
+
     uint16_t save_cooldown = 0;
 
-    // Restore last saved radiosonde state from EEPROM (0x0E28)
+    // Restore last saved radiosonde state from EEPROM (0x0E30)
     SavedSonde_t saved;
-    EEPROM_ReadBuffer(0x0E28, &saved, sizeof(saved));
+    EEPROM_ReadBuffer(0x0E30, &saved, sizeof(saved));
     if (saved.frequency >= SONDE_FREQ_START && saved.frequency <= SONDE_FREQ_END) {
         gSondeApp.frequency = saved.frequency;
         if (saved.lat_1e6 >= -90000000 && saved.lat_1e6 <= 90000000 &&
@@ -536,12 +538,10 @@ void APP_RunRadiosonde(void)
 
     // ADC setup for signal monitoring (MCU Pin 9 - PA8 / UART1_RX -> ADC_CH3)
     PORTCON_PORTA_IE &= ~PORTCON_PORTA_IE_A8_MASK;
-    PORTCON_PORTA_PU &= ~PORTCON_PORTA_PU_A8_MASK;  // Disable Pull-Up
-    PORTCON_PORTA_PD |= PORTCON_PORTA_PD_A8_MASK;   // Enable Pull-Down only to lower bias
+    PORTCON_PORTA_PU |= PORTCON_PORTA_PU_A8_MASK;   // Enable Pull-Up
+    PORTCON_PORTA_PD |= PORTCON_PORTA_PD_A8_MASK;   // Enable Pull-Down to create internal VCC/2 bias
     PORTCON_PORTA_SEL1 &= ~PORTCON_PORTA_SEL1_A8_MASK;
     PORTCON_PORTA_SEL1 |= PORTCON_PORTA_SEL1_A8_BITS_SARADC_CH3;
-
-    RS41_Init(&gSondeApp.decoder);
 
     // Enable backlight and setup receiver
     BACKLIGHT_TurnOn();
@@ -672,7 +672,7 @@ void APP_RunRadiosonde(void)
                         saved_data.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
                         saved_data.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
                         saved_data.alt_cm = gSondeApp.decoder.data.alt_cm;
-                        Sonde_SafeEEPROMWrite(0x0E28, &saved_data, sizeof(saved_data));
+                        Sonde_SafeEEPROMWrite(0x0E30, &saved_data, sizeof(saved_data));
                         save_cooldown = 15;
                     }
                 }
@@ -757,7 +757,7 @@ void APP_RunRadiosonde(void)
 
     // Read previous EEPROM data to preserve coordinates if we don't have live ones
     SavedSonde_t old_saved;
-    EEPROM_ReadBuffer(0x0E28, &old_saved, sizeof(old_saved));
+    EEPROM_ReadBuffer(0x0E30, &old_saved, sizeof(old_saved));
 
     if (gSondeApp.decoder.data.valid && gSondeApp.decoder.data.lat_1e6 != 0) {
         // We decoded live GPS data this session — use it
@@ -777,7 +777,7 @@ void APP_RunRadiosonde(void)
         final_save.lon_1e6 = 0;
         final_save.alt_cm  = 0;
     }
-    Sonde_SafeEEPROMWrite(0x0E28, &final_save, sizeof(final_save));
+    Sonde_SafeEEPROMWrite(0x0E30, &final_save, sizeof(final_save));
 
     // ============================================================
     // Cleanup and hardware restoration on exit
