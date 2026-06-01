@@ -6,7 +6,8 @@
 #include "radiosonde.h"
 #include "rs41.h"
 #include "../driver/eeprom.h"
-#include "../driver/system.h"  // SYSTEM_DelayMs — already included below, but needed for safe write
+#include "../driver/system.h"
+#include "../driver/uart.h"  // SYSTEM_DelayMs — already included below, but needed for safe write
 
 // Write EEPROM byte-by-byte to guarantee each byte completes its internal write cycle.
 // Mirrors SI_SafeEEPROMWrite in app/si.c — avoids silent failures with multi-byte writes.
@@ -22,6 +23,7 @@ typedef struct {
     int32_t lat_1e6;
     int32_t lon_1e6;
     int32_t alt_cm;
+    char     sonde_id[8];
 } SavedSonde_t;
 
 extern void miniqr_encode(const char *text, uint8_t qrcode[25][25]);
@@ -86,7 +88,7 @@ static void Sonde_DrawStatusBar(void) {
     char hstr[12];
     uint8_t ptr = gSondeApp.history_ptr;
     for (int i = 0; i < 8; i++) {
-        hstr[i] = (char)gSondeApp.history[(ptr + i) % 10];
+        hstr[i] = (char)gSondeApp.history[(ptr + i) & 7];
     }
     hstr[8] = '\0';
     UI_PrintStringSmallBuffer(hstr, gStatusLine + 36);
@@ -106,32 +108,33 @@ static void Sonde_DrawStatusBar(void) {
 static void Sonde_DrawDiagnostic(void)
 {
     char str[32];
-    GUI_DisplaySmallest("--- DIAGNOSTICS ---", 0, 8, false, true);
     
-    sprintf(str, "RSSI: %d", gSondeApp.last_rssi);
+    sprintf(str, "RSSI:%d P2P:%u", gSondeApp.last_rssi, gSondeApp.last_adc_p2p);
+    GUI_DisplaySmallest(str, 0, 8, false, true);
+    
+    sprintf(str, "DC:%u G:%u %s", gSondeApp.adc_avg_x512 >> 9, gSondeApp.gain_mode, gSondeApp.adc_clipped ? "CLIP" : "");
     GUI_DisplaySmallest(str, 0, 16, false, true);
-    
-    sprintf(str, "ADC P2P: %u", gSondeApp.last_adc_p2p);
+
+    const RS41_Decoder_t *dec = &gSondeApp.decoder;
+
+    sprintf(str, "Min:%d Err:%d/%d", dec->min_errors, dec->last_errors, dec->last_errors_inv);
     GUI_DisplaySmallest(str, 0, 24, false, true);
-    
-    sprintf(str, "DC Offs: %u", gSondeApp.adc_avg_x512 >> 9);
+
+    sprintf(str, "Rx:%d OK:%d", (int)dec->frames_received, (int)dec->frames_crc_ok);
     GUI_DisplaySmallest(str, 0, 32, false, true);
 
-    const char* g_modes[] = {"AUTO", "LOW", "MID", "HIGH", "MAX"};
-    sprintf(str, "Gain Mode: %s", g_modes[gSondeApp.gain_mode]);
-    GUI_DisplaySmallest(str, 64, 32, false, true);
-
-    const char *state_str = "SEARCHING";
-    if (gSondeApp.decoder.state == RS41_STATE_COLLECT_FRAME) state_str = "COLLECTING";
-    sprintf(str, "State: %s", state_str);
+    sprintf(str, "Sh:%d Inv:%d P:%02X", 
+            dec->diag_best_shift, 
+            (int)dec->diag_best_invert, 
+            dec->diag_best_pos);
     GUI_DisplaySmallest(str, 0, 40, false, true);
 
-    // Alerts (Line 6)
-    if (gSondeApp.last_adc_p2p > 3800 || (gSondeApp.adc_avg_x512 >> 9) > 3500) {
-        GUI_DisplaySmallest("!! CLIPPING !!", 0, 48, false, true);
-    } else if (gSondeApp.timeout_frames > 30) {
-        GUI_DisplaySmallest("!! NO SIGNAL 30s !!", 0, 48, false, true);
-    }
+    sprintf(str, "S:%02X P:%02X %04X/%04X", 
+            dec->diag_status_id, 
+            dec->diag_status_pos, 
+            dec->diag_status_crc_calc, 
+            dec->diag_status_crc_frame);
+    GUI_DisplaySmallest(str, 0, 48, false, true);
 }
 
 static void Sonde_DrawData(const RS41_Data_t *d)
@@ -139,7 +142,11 @@ static void Sonde_DrawData(const RS41_Data_t *d)
     char str[32];
 
     // Line 1: Sonde ID
-    sprintf(str, "ID: %.8s", d->sonde_id);
+    if (gSondeApp.decoder.frames_crc_ok == 0) {
+        sprintf(str, "ID: %.8s (saved)", d->sonde_id);
+    } else {
+        sprintf(str, "ID: %.8s (live)", d->sonde_id);
+    }
     GUI_DisplaySmallest(str, 0, 8, false, true);
 
     // Line 2: Latitude
@@ -171,8 +178,8 @@ static void Sonde_DrawData(const RS41_Data_t *d)
     GUI_DisplaySmallest(str, 0, 40, false, true);
 
     // Line 6: GPS Satellites, Time, Battery
-    // When showing restored "LAST GPS" data, time/sat/batt are not saved — show placeholder
-    if (d->sonde_id[0] == 'L' && d->sonde_id[1] == 'A') {  // "LAST GPS"
+    // When showing restored data (no valid frames decoded yet), time/sat/batt are not saved — show placeholder
+    if (gSondeApp.decoder.frames_crc_ok == 0) {  // Saved position
         GUI_DisplaySmallest("  --:--:-- (saved pos)", 0, 48, false, true);
     } else {
         sprintf(str, "Sat:%2u %02u:%02u:%02u %u.%uV",
@@ -262,15 +269,15 @@ static void Sonde_Render(void)
     UI_DisplayClear();
     memset(gStatusLine, 0, sizeof(gStatusLine));
     
-    // ALWAYS DRAW FREQUENCY AND STEP AT y=0 BEFORE ANYTHING ELSE
     char fstr[32];
     const char *step_str = (gSondeApp.step_idx == 0) ? "1M" : 
                            (gSondeApp.step_idx == 1) ? "100k" :
                            (gSondeApp.step_idx == 2) ? "10k" : "1k";
-    sprintf(fstr, "FREQ: %3u.%03u  %s", 
+    sprintf(fstr, "FREQ:%3u.%03u %s %s", 
             gSondeApp.frequency / 100000, 
             (gSondeApp.frequency % 100000) / 100, 
-            step_str);
+            step_str,
+            gSondeApp.hpf_compensation ? "INT" : "RAW");
     GUI_DisplaySmallest(fstr, 0, 0, false, true);
 
     Sonde_DrawStatusBar();
@@ -322,7 +329,7 @@ static void Sonde_SetupReceiver(uint32_t freq)
     BK4819_WriteRegister(0x43, 
         (7u << 12) |  // RF filter bandwidth = 4.5kHz * 2
         (7u << 9)  |  // RF filter bandwidth weak = 4.5kHz * 2
-        (4u << 6)  |  // AFTxLPF2 = 4.5kHz
+        (4u << 6)  |  // AFTxLPF2 = 4.5kHz (widest available)
         (2u << 4)  |  // 25k BW mode
         (1u << 3)  |  // fixed
         (0u << 2)  |  // Normal gain (was +6dB, caused ADC clipping)
@@ -330,16 +337,12 @@ static void Sonde_SetupReceiver(uint32_t freq)
 
     // (Removed GPIO0 override so it correctly works as RX_ENABLE)
 
-    // Ensure AF output is not muted and has maximum gain for testing
-    // REG_48: <13> = Mute, <6:0> = Gain (0-127)
+    // Ensure AF output is not muted and has moderate gain
+    // REG_48: <13> = Mute, <11:10> = Gain-1 (0), <9:4> = Gain-2 (30), <3:0> = DAC Gain (8)
     uint16_t reg_48 = BK4819_ReadRegister(0x48);
     reg_48 &= ~(1u << 13); // Unmute
-    reg_48 = (reg_48 & ~0x007F) | 60; // Moderate AF gain to prevent clipping
+    reg_48 = (reg_48 & ~0x0FF0) | (30u << 4); // Set moderate Gain-2 (30 out of 63)
     BK4819_WriteRegister(0x48, reg_48);
-
-    // Set PGA Gain (Reg 0x13): bit 0-6 is LNA/PGA gain.
-    // Setting to 0x20 to further reduce clipping risk.
-    BK4819_WriteRegister(0x13, 0x0020);
 
     // Disable RX AF filters for raw FSK data:
     uint16_t reg_2b = BK4819_ReadRegister(0x2B);
@@ -352,6 +355,7 @@ static void Sonde_SetupReceiver(uint32_t freq)
 
     // Setup AGC for sensitive reception
     BK4819_InitAGC(false);
+    BK4819_WriteRegister(0x13, 0x03FF); // Allow absolute maximum RF gain for weak signals
     BK4819_SetAGC(true);
 
     // Enable RX
@@ -470,8 +474,6 @@ static bool Sonde_HandleKeys(void)
         case KEY_MENU:
             // Cycle Gain mode: Auto -> Low -> Mid -> High -> Max
             gSondeApp.gain_mode = (gSondeApp.gain_mode + 1) % 5;
-            // Immediate force AGC logic reset to apply new gain immediately
-            gSondeApp.agc_counter = 10;
             break;
 
         case KEY_F:
@@ -482,6 +484,11 @@ static bool Sonde_HandleKeys(void)
             } else {
                 AUDIO_AudioPathOff();
             }
+            break;
+
+        case KEY_SIDE1:
+        case KEY_SIDE2:
+            gSondeApp.hpf_compensation = !gSondeApp.hpf_compensation;
             break;
 
         default:
@@ -504,24 +511,34 @@ void APP_RunRadiosonde(void)
     memset(&gSondeApp, 0, sizeof(SondeApp_t));
     gSondeApp.decoder.data.valid = false;
     gSondeApp.timeout_frames = 0;
-    gSondeApp.agc_counter = 0;
     gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
     gSondeApp.frequency = SONDE_FREQ_DEFAULT;
     gSondeApp.step_idx = 1; // 100 kHz default
     gSondeApp.gain_mode = 0; // Auto Gain
     gSondeApp.audio_enabled = true;
-    memset(gSondeApp.history, ' ', 10);
+    memset(gSondeApp.history, ' ', 8);
     gSondeApp.history_ptr = 0;
     gSondeApp.pending_history = '.';
     gSondeApp.history_sample_acc = 0;
 
     RS41_Init(&gSondeApp.decoder);
 
+    // Persistent demodulator state variables
+    int32_t integrated = 0;
+    int32_t integrated_avg = 0;
+    int32_t centered_old = 0;
+    int32_t centered_older = 0;
+    int32_t phase = 0;
+    int32_t bit_integrator = 0;
+    int32_t zc_phase = 0;
+    int confirmed_state = 1;
+    bool zc_pending = false;
+
     uint16_t save_cooldown = 0;
 
-    // Restore last saved radiosonde state from EEPROM (0x0E30)
+    // Restore last saved radiosonde state from EEPROM (0x0E28)
     SavedSonde_t saved;
-    EEPROM_ReadBuffer(0x0E30, &saved, sizeof(saved));
+    EEPROM_ReadBuffer(0x0E28, &saved, sizeof(saved));
     if (saved.frequency >= SONDE_FREQ_START && saved.frequency <= SONDE_FREQ_END) {
         gSondeApp.frequency = saved.frequency;
         if (saved.lat_1e6 >= -90000000 && saved.lat_1e6 <= 90000000 &&
@@ -531,15 +548,22 @@ void APP_RunRadiosonde(void)
             gSondeApp.decoder.data.lat_1e6 = saved.lat_1e6;
             gSondeApp.decoder.data.lon_1e6 = saved.lon_1e6;
             gSondeApp.decoder.data.alt_cm = saved.alt_cm;
-            strcpy(gSondeApp.decoder.data.sonde_id, "LAST GPS");
+            
+            // Restore saved sonde ID if first char is printable ASCII, else fallback
+            if (saved.sonde_id[0] >= 32 && saved.sonde_id[0] <= 126) {
+                memcpy(gSondeApp.decoder.data.sonde_id, saved.sonde_id, 8);
+                gSondeApp.decoder.data.sonde_id[8] = '\0';
+            } else {
+                strcpy(gSondeApp.decoder.data.sonde_id, "LAST GPS");
+            }
             gSondeApp.mode = SONDE_MODE_MONITOR;
         }
     }
 
     // ADC setup for signal monitoring (MCU Pin 9 - PA8 / UART1_RX -> ADC_CH3)
     PORTCON_PORTA_IE &= ~PORTCON_PORTA_IE_A8_MASK;
-    PORTCON_PORTA_PU |= PORTCON_PORTA_PU_A8_MASK;   // Enable Pull-Up
-    PORTCON_PORTA_PD |= PORTCON_PORTA_PD_A8_MASK;   // Enable Pull-Down to create internal VCC/2 bias
+    PORTCON_PORTA_PU &= ~PORTCON_PORTA_PU_A8_MASK;   // Disable Pull-Up (relying on external 10k pull-up)
+    PORTCON_PORTA_PD |= PORTCON_PORTA_PD_A8_MASK;   // Enable Pull-Down to create DC offset bias
     PORTCON_PORTA_SEL1 &= ~PORTCON_PORTA_SEL1_A8_MASK;
     PORTCON_PORTA_SEL1 |= PORTCON_PORTA_SEL1_A8_BITS_SARADC_CH3;
 
@@ -565,13 +589,9 @@ void APP_RunRadiosonde(void)
 
             uint32_t sample_count = 0;
             bool frame_decoded = false;
-            uint16_t local_min = 0xFFFF;
-            uint16_t local_max = 0;
-
-            // Zero-crossing state
-            int par_alt = 1;
-            uint32_t samples_since_cross = 0;
-            static int32_t centered_old = 0;
+            int32_t local_min = 0;
+            int32_t local_max = 0;
+            bool adc_clipped = false;
 
             uint32_t start_val = SysTick->VAL;
 
@@ -584,9 +604,10 @@ void APP_RunRadiosonde(void)
                 while (!ADC_CheckEndOfConversion(ADC_CH3)) {}
                 uint16_t adc_val = ADC_GetValue(ADC_CH3);
                 
-                // Track min/max for P2P amplitude
-                if (adc_val < local_min) local_min = adc_val;
-                if (adc_val > local_max) local_max = adc_val;
+                // Check if raw signal is clipping the ADC
+                if (adc_val < 10 || adc_val > 4085) {
+                    adc_clipped = true;
+                }
 
                 // Dynamic DC threshold (slow EMA, alpha = 1/256)
                 gSondeApp.last_adc_raw = adc_val;
@@ -594,32 +615,73 @@ void APP_RunRadiosonde(void)
                 gSondeApp.adc_avg_x512 = (gSondeApp.adc_avg_x512 * 255 + ((uint32_t)adc_val << 9)) >> 8;
                 
                 int32_t centered = (int32_t)adc_val - (int32_t)(gSondeApp.adc_avg_x512 >> 9);
-                gSondeApp.last_amplitude = (uint16_t)((centered > 0) ? centered : -centered);
-
-                // Simple 2-sample LPF to smooth out noise spikes without losing bit edges
-                int32_t filtered = (centered + centered_old) >> 1;
-                centered_old = centered;
-
-                // Hysteresis for Zero-crossing
-                int current_par = (filtered > 100) ? 1 : ((filtered < -100) ? -1 : par_alt);
-
-                // Zero crossing logic (DPLL)
-                if (current_par * par_alt <= 0) {
-                    // 38400 Hz sampling / 4800 baud = 8 samples per bit
-                    int len = (samples_since_cross + 4) / 8;
-                    int bit = (par_alt > 0) ? 1 : 0;
-                    
-                    for (int i = 0; i < len; i++) {
-                        if (RS41_ProcessBit(&gSondeApp.decoder, bit)) {
-                            frame_decoded = true;
-                            break;
-                        }
+                
+                int32_t signal = centered;
+                if (gSondeApp.hpf_compensation) {
+                    integrated = integrated - (integrated >> 8) + centered;
+                    if (integrated_avg == 0 && integrated != 0) {
+                        integrated_avg = integrated << 8;
                     }
-                    
-                    samples_since_cross = 0;
-                    par_alt = current_par;
+                    integrated_avg = (integrated_avg * 255 + integrated) >> 8;
+                    signal = integrated - (integrated_avg >> 8);
+                } else {
+                    integrated = 0;
+                    integrated_avg = 0;
                 }
-                samples_since_cross++;
+                
+                gSondeApp.last_amplitude = (uint16_t)((signal > 0) ? signal : -signal);
+
+                // 3-tap LPF to smooth out noise spikes
+                int32_t filtered = (signal + (centered_old << 1) + centered_older) >> 2;
+                centered_older = centered_old;
+                centered_old = signal;
+
+                // Track min/max of the filtered signal for demodulation amplitude tracking
+                if (filtered < local_min) local_min = filtered;
+                if (filtered > local_max) local_max = filtered;
+
+                // Dynamic Hysteresis based on average signal strength
+                int32_t hysteresis = gSondeApp.p2p_avg >> 3;
+                if (hysteresis < 30) hysteresis = 30;
+
+                // DPLL timing recovery
+                phase += 10;
+                bit_integrator += filtered;
+
+                // 1. Detect zero-crossing in the opposite direction of the confirmed state
+                int sign = (filtered >= 0) ? 1 : -1;
+                if (sign != confirmed_state && !zc_pending) {
+                    zc_phase = phase;
+                    zc_pending = true;
+                }
+
+                // 2. Confirm zero-crossing if it crosses the hysteresis threshold
+                if (zc_pending) {
+                    if (sign != confirmed_state) {
+                        if ((sign == 1 && filtered > hysteresis) || (sign == -1 && filtered < -hysteresis)) {
+                            int phase_error = zc_phase;
+                            if (phase_error >= 40) phase_error -= 80;
+                            phase -= phase_error / 2; // 50% loop gain
+                            confirmed_state = sign;   // Update confirmed state
+                            zc_pending = false;
+                        }
+                    } else {
+                        // Signal returned to previous state before confirming - discard glitch
+                        zc_pending = false;
+                    }
+                }
+
+                if (phase >= 80) {
+                    phase -= 80;
+                    if (zc_pending) {
+                        zc_phase -= 80;
+                    }
+                    int bit = (bit_integrator > 0) ? 1 : 0;
+                    if (RS41_ProcessBit(&gSondeApp.decoder, bit)) {
+                        frame_decoded = true;
+                    }
+                    bit_integrator = 0;
+                }
 
                 // Breakout conditions
                 if (frame_decoded) break;
@@ -640,7 +702,7 @@ void APP_RunRadiosonde(void)
                 if (++gSondeApp.history_sample_acc >= 38400) {
                     gSondeApp.history_sample_acc = 0;
                     gSondeApp.history[gSondeApp.history_ptr] = (uint8_t)gSondeApp.pending_history;
-                    gSondeApp.history_ptr = (gSondeApp.history_ptr + 1) % 10;
+                    gSondeApp.history_ptr = (gSondeApp.history_ptr + 1) & 7;
                     gSondeApp.pending_history = '.'; // Reset for next second
                 }
             } // End of bit-recovery loop
@@ -648,6 +710,8 @@ void APP_RunRadiosonde(void)
             // Restore ADC for battery measurement
             SARADC_CFG = (SARADC_CFG & ~SARADC_CFG_CH_SEL_MASK) | 
                          (((ADC_CH4 | ADC_CH9) << SARADC_CFG_CH_SEL_SHIFT) & SARADC_CFG_CH_SEL_MASK);
+                         
+            gSondeApp.adc_clipped = adc_clipped;
                          
             if (save_cooldown > 0) {
                 save_cooldown--;
@@ -672,7 +736,15 @@ void APP_RunRadiosonde(void)
                         saved_data.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
                         saved_data.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
                         saved_data.alt_cm = gSondeApp.decoder.data.alt_cm;
-                        Sonde_SafeEEPROMWrite(0x0E30, &saved_data, sizeof(saved_data));
+                        if (gSondeApp.decoder.data.sonde_id[0] != '\0' &&
+                            gSondeApp.decoder.data.sonde_id[0] != 'L') {
+                            memcpy(saved_data.sonde_id, gSondeApp.decoder.data.sonde_id, 8);
+                        } else {
+                            SavedSonde_t old_saved;
+                            EEPROM_ReadBuffer(0x0E28, &old_saved, sizeof(old_saved));
+                            memcpy(saved_data.sonde_id, old_saved.sonde_id, 8);
+                        }
+                        Sonde_SafeEEPROMWrite(0x0E28, &saved_data, sizeof(saved_data));
                         save_cooldown = 15;
                     }
                 }
@@ -682,14 +754,14 @@ void APP_RunRadiosonde(void)
                 // Auto-switch back to Diagnostics if signal is lost for 30 seconds
                 // But NOT if we are displaying saved LAST GPS coordinates
                 if (gSondeApp.timeout_frames > 30 && gSondeApp.mode == SONDE_MODE_MONITOR) {
-                    if (strcmp(gSondeApp.decoder.data.sonde_id, "LAST GPS") != 0) {
+                    if (gSondeApp.decoder.data.sonde_id[0] != 'L') {
                         gSondeApp.mode = SONDE_MODE_DIAGNOSTIC;
                     }
                 }
             }
                          
             // Calculate and filter Peak-to-Peak amplitude
-            gSondeApp.last_adc_p2p = (local_max > local_min) ? (local_max - local_min) : 0;
+            gSondeApp.last_adc_p2p = (local_max > local_min) ? (uint16_t)(local_max - local_min) : 0;
             if (gSondeApp.p2p_avg == 0) {
                 gSondeApp.p2p_avg = gSondeApp.last_adc_p2p;
             } else {
@@ -697,47 +769,51 @@ void APP_RunRadiosonde(void)
             }
 
             // --- Software AGC / Manual Gain ---
-            if (++gSondeApp.agc_counter >= 10) {
-                gSondeApp.agc_counter = 0;
-                
-                uint16_t reg_48 = BK4819_ReadRegister(0x48);
-                uint8_t current_gain = reg_48 & 0x7F;
-                bool changed = false;
-                
-                if (gSondeApp.gain_mode == 0) {
-                    // Auto Gain Mode
-                    if (gSondeApp.last_rssi > 500) {
-                        // Target P2P range: 1200 - 2400
-                        if (gSondeApp.p2p_avg < 1200 && current_gain < 120) {
-                            current_gain += 2;
-                            changed = true;
-                        } else if (gSondeApp.p2p_avg > 2800 && current_gain > 5) {
-                            current_gain -= 4;
-                            changed = true;
+            uint16_t reg_48 = BK4819_ReadRegister(0x48);
+            uint8_t current_gain = (reg_48 >> 4) & 0x3F; // Extract Gain-2 (0-63)
+            bool changed = false;
+            
+            if (gSondeApp.gain_mode == 0) {
+                // Auto Gain Mode
+                if (gSondeApp.last_rssi > 120) {
+                    // Target P2P range: 600 - 1000
+                    if (gSondeApp.p2p_avg < 600 && current_gain < 60) {
+                        current_gain += 1;
+                        changed = true;
+                    } else if (gSondeApp.p2p_avg > 1000 && current_gain > 2) {
+                        // Fast responsive decrease proportional to overflow
+                        int32_t diff = (int32_t)(gSondeApp.p2p_avg - 1000) >> 9;
+                        if (diff < 2) diff = 2;
+                        if (diff > 15) diff = 15;
+                        if (current_gain > diff) {
+                            current_gain -= diff;
+                        } else {
+                            current_gain = 2;
                         }
-                    } else {
-                        // No signal? Reset to a safe baseline gain (60)
-                        if (current_gain != 60) {
-                            current_gain = 60;
-                            changed = true;
-                        }
+                        changed = true;
                     }
                 } else {
-                    // Manual Gain Mode
-                    // 1: LOW (20), 2: MID (60), 3: HIGH (100), 4: MAX (127)
-                    uint8_t target_gain = (gSondeApp.gain_mode == 1) ? 20 :
-                                          (gSondeApp.gain_mode == 2) ? 60 : 
-                                          (gSondeApp.gain_mode == 3) ? 100 : 127;
-                    if (current_gain != target_gain) {
-                        current_gain = target_gain;
+                    // No signal? Reset to a safe baseline gain (30)
+                    if (current_gain != 30) {
+                        current_gain = 30;
                         changed = true;
                     }
                 }
-                
-                if (changed) {
-                    reg_48 = (reg_48 & ~0x007F) | current_gain;
-                    BK4819_WriteRegister(0x48, reg_48);
+            } else {
+                // Manual Gain Mode
+                // 1: LOW (10), 2: MID (30), 3: HIGH (50), 4: MAX (63)
+                uint8_t target_gain = (gSondeApp.gain_mode == 1) ? 10 :
+                                      (gSondeApp.gain_mode == 2) ? 30 : 
+                                      (gSondeApp.gain_mode == 3) ? 50 : 63;
+                if (current_gain != target_gain) {
+                    current_gain = target_gain;
+                    changed = true;
                 }
+            }
+            
+            if (changed) {
+                reg_48 = (reg_48 & ~0x03F0) | ((uint16_t)current_gain << 4);
+                BK4819_WriteRegister(0x48, reg_48);
             }
 
         } else {
@@ -757,13 +833,19 @@ void APP_RunRadiosonde(void)
 
     // Read previous EEPROM data to preserve coordinates if we don't have live ones
     SavedSonde_t old_saved;
-    EEPROM_ReadBuffer(0x0E30, &old_saved, sizeof(old_saved));
+    EEPROM_ReadBuffer(0x0E28, &old_saved, sizeof(old_saved));
 
     if (gSondeApp.decoder.data.valid && gSondeApp.decoder.data.lat_1e6 != 0) {
         // We decoded live GPS data this session — use it
         final_save.lat_1e6 = gSondeApp.decoder.data.lat_1e6;
         final_save.lon_1e6 = gSondeApp.decoder.data.lon_1e6;
         final_save.alt_cm  = gSondeApp.decoder.data.alt_cm;
+        if (gSondeApp.decoder.data.sonde_id[0] != '\0' &&
+            gSondeApp.decoder.data.sonde_id[0] != 'L') {
+            memcpy(final_save.sonde_id, gSondeApp.decoder.data.sonde_id, 8);
+        } else {
+            memcpy(final_save.sonde_id, old_saved.sonde_id, 8);
+        }
     } else if (old_saved.lat_1e6 >= -90000000  && old_saved.lat_1e6 <= 90000000 &&
                old_saved.lon_1e6 >= -180000000 && old_saved.lon_1e6 <= 180000000 &&
                old_saved.lat_1e6 != 0 && old_saved.lon_1e6 != 0) {
@@ -771,13 +853,15 @@ void APP_RunRadiosonde(void)
         final_save.lat_1e6 = old_saved.lat_1e6;
         final_save.lon_1e6 = old_saved.lon_1e6;
         final_save.alt_cm  = old_saved.alt_cm;
+        memcpy(final_save.sonde_id, old_saved.sonde_id, 8);
     } else {
         // No valid data anywhere — store zeros so the load guard rejects it next time
         final_save.lat_1e6 = 0;
         final_save.lon_1e6 = 0;
         final_save.alt_cm  = 0;
+        memset(final_save.sonde_id, 0, 8);
     }
-    Sonde_SafeEEPROMWrite(0x0E30, &final_save, sizeof(final_save));
+    Sonde_SafeEEPROMWrite(0x0E28, &final_save, sizeof(final_save));
 
     // ============================================================
     // Cleanup and hardware restoration on exit

@@ -99,6 +99,14 @@ typedef struct {
     uint8_t last_errors_inv;
     uint32_t last_shift_hi;  // upper 32 bits of shift_reg at detection
     uint32_t last_shift_lo;  // lower 32 bits
+    uint8_t  diag_status_pos;
+    uint8_t  diag_status_len;
+    uint8_t  diag_status_id;
+    uint16_t diag_status_crc_calc;
+    uint16_t diag_status_crc_frame;
+    int8_t   diag_best_shift;
+    bool     diag_best_invert;
+    uint16_t diag_best_pos;
 } RS41_Decoder_t;
 
 //

@@ -414,7 +414,7 @@ void SETTINGS_FactoryReset(bool bIsAll)
                 (bIsAll ||
                  (
                          !(i >= 0x0D60 && i < 0x0E28) &&     // MR Channel Attributes
-                         !(i >= 0x0E30 && i < 0x0E40) &&     // Radiosonde Tracker
+                         !(i >= 0x0E28 && i < 0x0E40) &&     // Radiosonde Tracker
                          !(i >= 0x0F18 && i < 0x0F30) &&     // Scan List
                          !(i >= 0x0F50 && i < 0x1C00) &&     // MR Channel Names
                          !(i >= 0x0E40 && i < 0x0E70) &&     // FM Channels

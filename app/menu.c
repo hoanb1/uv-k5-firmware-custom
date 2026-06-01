@@ -1255,10 +1255,6 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) {
 
                 if (Value > 0 && Value <= gMenuListCount) {
                     gMenuCursor = Value - 1;
-#ifndef ENABLE_MDC1200
-                    if (gMenuCursor + 1 >= 26)gMenuCursor++;
-
-#endif
                     gFlagRefreshSetting = true;
                     return;
                 }
@@ -1273,10 +1269,6 @@ static void MENU_Key_0_to_9(KEY_Code_t Key, bool bKeyPressed, bool bKeyHeld) {
                 Value = gInputBox[0];
                 if (Value > 0 && Value <= gMenuListCount) {
                     gMenuCursor = Value - 1;
-#ifndef ENABLE_MDC1200
-                    if (gMenuCursor + 1 >= 26)gMenuCursor++;
-
-#endif
                     gFlagRefreshSetting = true;
                     return;
                 }
@@ -1696,14 +1688,7 @@ static void MENU_Key_UP_DOWN(bool bKeyPressed, bool bKeyHeld, int8_t Direction) 
     }
 
     if (!gIsInSubMenu) {
-#ifndef ENABLE_MDC1200
-        uint8_t last_num = gMenuCursor;
-#endif
         gMenuCursor = NUMBER_AddWithWraparound(gMenuCursor, key_dir * Direction, 0, gMenuListCount - 1);
-#ifndef ENABLE_MDC1200
-        if (last_num + 1 < 26 && gMenuCursor + 1 == 26)gMenuCursor++;
-        else if (last_num + 1 == 27 && gMenuCursor + 1 == 26)gMenuCursor--;
-#endif
         gFlagRefreshSetting = true;
 
         gRequestDisplayScreen = DISPLAY_MENU;

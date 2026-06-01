@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-06-02
+
+### Changed
+- **Optimal PA8 DC Bias for Radiosonde Decoder**:
+  - Configured MCU Pin 9 (PA8) to disable the internal pull-up and enable the internal weak pull-down resistor (~41.5kΩ) at startup.
+  - This matches the external 10kΩ pull-up resistor on the Quansheng board to establish a stable internal DC bias voltage of ~2.66V (ADC offset ~3306) on the AC-coupled signal, preventing signal clipping and maximizing decoding sensitivity.
+
 ## [Unreleased] - 2026-05-20
 
 ### Added

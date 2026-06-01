@@ -238,9 +238,26 @@ static uint16_t rs41_find_block(const uint8_t *frame, uint8_t blk_id)
 static void rs41_parse_status(RS41_Decoder_t *dec)
 {
     uint16_t pos = rs41_find_block(dec->frame, RS41_BLK_STATUS);
-    if (pos == 0) return;
+    dec->diag_status_pos = pos;
+    if (pos == 0) {
+        dec->diag_status_id = dec->frame[0x39];
+        dec->diag_status_len = dec->frame[0x3A];
+        dec->diag_status_crc_calc = 0;
+        dec->diag_status_crc_frame = 0;
+        return;
+    }
 
-    if (!rs41_check_block_crc(dec->frame, pos))
+    dec->diag_status_id = dec->frame[pos];
+    dec->diag_status_len = dec->frame[pos + 1];
+
+    uint16_t crc_calc = rs41_crc16(&dec->frame[pos + 2], dec->diag_status_len);
+    uint16_t crc_frame = (uint16_t)dec->frame[pos + 2 + dec->diag_status_len]
+                       | ((uint16_t)dec->frame[pos + 2 + dec->diag_status_len + 1] << 8);
+
+    dec->diag_status_crc_calc = crc_calc;
+    dec->diag_status_crc_frame = crc_frame;
+
+    if (crc_calc != crc_frame)
         return;
 
     dec->data.crc_ok |= RS41_CRC_STATUS;
@@ -249,8 +266,19 @@ static void rs41_parse_status(RS41_Decoder_t *dec)
     dec->data.frame_nr = read_u16_le(&dec->frame[pos + 2]);
 
     // Sonde ID: 8 bytes ASCII at offset +4
+    char old_id[10];
+    strcpy(old_id, dec->data.sonde_id);
+
     memcpy(dec->data.sonde_id, &dec->frame[pos + 4], 8);
     dec->data.sonde_id[8] = '\0';
+
+    // If sonde ID changed from a previous real sonde (not "LAST GPS"),
+    // clear the GPS coordinates.
+    if (old_id[0] != '\0' && old_id[0] != 'L' && memcmp(old_id, dec->data.sonde_id, 8) != 0) {
+        dec->data.lat_1e6 = 0;
+        dec->data.lon_1e6 = 0;
+        dec->data.alt_cm = 0;
+    }
 
     // Battery voltage: 1 byte at offset +12 (in tenths of a volt)
     if (pos + 12 < RS41_FRAME_LEN) {
@@ -335,16 +363,60 @@ static void rs41_parse_gps_pos(RS41_Decoder_t *dec)
     }
 }
 
+static void shift_frame_bits(const uint8_t *in, uint8_t *out, int shift, bool invert)
+{
+    for (int i = 0; i < RS41_FRAME_LEN; i++) {
+        uint16_t val = in[i];
+        if (shift > 0) {
+            uint16_t next = (i + 1 < RS41_FRAME_LEN) ? in[i + 1] : 0;
+            val = (val >> shift) | (next << (8 - shift));
+        }
+        uint8_t res = (uint8_t)val;
+        if (invert) {
+            res = ~res;
+        }
+        out[i] = res;
+    }
+}
+
 // ============================================================
 // Parse the complete frame
 // ============================================================
-static void rs41_parse_frame(RS41_Decoder_t *dec)
+static bool rs41_parse_frame(RS41_Decoder_t *dec)
 {
+    dec->diag_best_shift = -1;
+    dec->diag_best_invert = false;
+    dec->diag_best_pos = 0;
+
+    for (int inv = 0; inv < 2; inv++) {
+        for (int sh = 0; sh < 8; sh++) {
+            uint8_t temp_frame[RS41_FRAME_LEN];
+            shift_frame_bits(dec->frame, temp_frame, sh, inv == 1);
+            rs41_descramble(temp_frame, RS41_FRAME_LEN);
+            
+            // Search for status block 0x79 with length 0x28
+            for (uint16_t p = 0x30; p < 0x45; p++) {
+                if (temp_frame[p] == 0x79 && temp_frame[p + 1] == 0x28) {
+                    dec->diag_best_shift = sh;
+                    dec->diag_best_invert = (inv == 1);
+                    dec->diag_best_pos = p;
+                    // Copy the corrected, descrambled frame to dec->frame
+                    memcpy(dec->frame, temp_frame, RS41_FRAME_LEN);
+                    break;
+                }
+            }
+            if (dec->diag_best_shift != -1) break;
+        }
+        if (dec->diag_best_shift != -1) break;
+    }
+
     // Reset crc_ok for the current frame, but keep old data
     dec->data.crc_ok = 0;
 
-    // Descramble the frame (XOR with LFSR mask)
-    rs41_descramble(dec->frame, RS41_FRAME_LEN);
+    // Descramble the frame only if the scanner didn't already do it
+    if (dec->diag_best_shift == -1) {
+        rs41_descramble(dec->frame, RS41_FRAME_LEN);
+    }
 
     // (Header verification skipped as it was matched by correlation)
 
@@ -357,7 +429,9 @@ static void rs41_parse_frame(RS41_Decoder_t *dec)
     if (dec->data.crc_ok & RS41_CRC_STATUS) {
         dec->data.valid = true;
         dec->frames_crc_ok++;
+        return true;
     }
+    return false;
 }
 
 // ============================================================
@@ -457,7 +531,7 @@ bool RS41_ProcessBit(RS41_Decoder_t *dec, uint8_t bit)
                 dec->frames_received++;
 
                 // Parse the frame
-                rs41_parse_frame(dec);
+                bool is_valid = rs41_parse_frame(dec);
 
                 // Reset for next frame
                 dec->state = RS41_STATE_WAIT_HEADER;
@@ -466,7 +540,7 @@ bool RS41_ProcessBit(RS41_Decoder_t *dec, uint8_t bit)
                 dec->frame_byte_idx = 0;
                 dec->frame_bit_idx = 0;
 
-                return dec->data.valid;
+                return is_valid;
             }
             break;
         }

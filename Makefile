@@ -11,22 +11,22 @@ ENABLE_LTO                    ?= 1
 
 ENABLE_ENGLISH ?= 1
 # ---- STOCK QUANSHENG FERATURES ----
-ENABLE_UART                   ?= 1
+ENABLE_UART                   ?= 0
 ENABLE_AIRCOPY                ?= 0
-ENABLE_FMRADIO                = 0
+ENABLE_FMRADIO                ?= 0
 ENABLE_NOAA                   ?= 0
 ENABLE_VOICE                  ?= 0
-ENABLE_VOX                    ?= 1
+ENABLE_VOX                    ?= 0
 ENABLE_ALARM                  ?= 0
 ENABLE_TX1750                 ?= 0
 ENABLE_PWRON_PASSWORD         ?= 0
-ENABLE_DTMF_CALLING           ?= 1
-ENABLE_FLASHLIGHT             ?= 1
+ENABLE_DTMF_CALLING           ?= 0
+ENABLE_FLASHLIGHT             ?= 0
 ENABLE_BOOTLOADER			 ?= 0
 # ---- CUSTOM MODS ----
 ENABLE_BIG_FREQ               ?= 1
 ENABLE_KEEP_MEM_NAME          ?= 1
-ENABLE_WIDE_RX                ?= 0
+ENABLE_WIDE_RX                ?= 1
 ENABLE_TX_WHEN_AM             ?= 0
 ENABLE_F_CAL_MENU             ?= 0
 ENABLE_CTCSS_TAIL_PHASE_SHIFT ?= 0
@@ -34,21 +34,21 @@ ENABLE_BOOT_BEEPS             ?= 0
 ENABLE_SHOW_CHARGE_LEVEL      ?= 0
 ENABLE_REVERSE_BAT_SYMBOL     ?= 0
 ENABLE_NO_CODE_SCAN_TIMEOUT   ?= 0
-ENABLE_AM_FIX                 ?= 0
-ENABLE_SQUELCH_MORE_SENSITIVE ?= 0
-ENABLE_FASTER_CHANNEL_SCAN    ?= 0
-ENABLE_RSSI_BAR               ?= 1
-ENABLE_COPY_CHAN_TO_VFO       ?= 0  # disabled: free flash for CW decoder
-ENABLE_SPECTRUM               = 0
+ENABLE_AM_FIX                 ?= 1
+ENABLE_SQUELCH_MORE_SENSITIVE = 1
+ENABLE_FASTER_CHANNEL_SCAN    = 1
+ENABLE_RSSI_BAR               ?= 0
+ENABLE_COPY_CHAN_TO_VFO       ?= 0
+ENABLE_SPECTRUM               ?= 0
 ENABLE_REDUCE_LOW_MID_TX_POWER?= 0
 ENABLE_BYP_RAW_DEMODULATORS   ?= 0
 ENABLE_BLMIN_TMP_OFF          ?= 0
-ENABLE_SCAN_RANGES            ?= 0  # disabled: free flash for CW decoder
-ENABLE_MDC1200                = 0
-ENABLE_MDC1200_SHOW_OP_ARG    = 0
-ENABLE_MDC1200_SIDE_BEEP      = 0
-ENABLE_MDC1200_CONTACT        = 0
-ENABLE_MDC1200_EDIT			  = 0
+ENABLE_SCAN_RANGES            = 0
+ENABLE_MDC1200                ?= 0
+ENABLE_MDC1200_SHOW_OP_ARG    ?= 0
+ENABLE_MDC1200_SIDE_BEEP      ?= 0
+ENABLE_MDC1200_CONTACT        ?= 0
+ENABLE_MDC1200_EDIT			  ?= 0
 ENABLE_UART_RW_BK_REGS 		  ?= 0
 ENABLE_AUDIO_BAR_DEFAULT      ?= 0
 ENABLE_EEPROM_TYPE        	   = 0
@@ -66,11 +66,11 @@ ENABLE_WARNING 				  ?= 0  # disabled: free flash for CW decoder
 ENABLE_MESSENGER              			= 0
 ENABLE_MESSENGER_DELIVERY_NOTIFICATION	= 0
 ENABLE_MESSENGER_NOTIFICATION			= 0
-ENABLE_4732 =1
-ENABLE_4732SSB =1
+ENABLE_4732 ?= 1
+ENABLE_4732SSB ?= 1
 
 ENABLE_DOPPLER               =0
-ENABLE_RS41                  =1
+ENABLE_RS41                  ?= 1
 ENABLE_CW                    ?= 0  # CW Morse decoder+keyer (no hardware mod)
 #############################################################
 PACKED_FILE_SUFFIX = UVK5_MOD
@@ -87,19 +87,19 @@ endif
 ifeq ($(ENABLE_FMRADIO),1)
 	ENABLE_4732=0
 endif
-ifeq ($(ENABLE_RS41),1)
-	ENABLE_MDC1200=0
-	ENABLE_DTMF_CALLING=0
-	ENABLE_VOX=0
-	ENABLE_FLASHLIGHT=0
-	ENABLE_ALARM=0
-	ifeq ($(ENABLE_4732),1)
-		ENABLE_AM_FIX=0
-		ENABLE_KEEP_MEM_NAME=0
-		ENABLE_BIG_FREQ=0
-		ENABLE_RSSI_BAR=0
-	endif
-endif
+#ifeq ($(ENABLE_RS41),1)
+#	ENABLE_MDC1200=0
+#	ENABLE_DTMF_CALLING=0
+#	ENABLE_VOX=0
+#	ENABLE_FLASHLIGHT=0
+#	ENABLE_ALARM=0
+#	ifeq ($(ENABLE_4732),1)
+##		ENABLE_AM_FIX=0
+##		ENABLE_KEEP_MEM_NAME=0
+##		ENABLE_BIG_FREQ=0
+##		ENABLE_RSSI_BAR=0
+#	endif
+#endif
 
 
 CFLAGS =
@@ -321,7 +321,7 @@ ifeq ($(ENABLE_OVERLAY),1)
 endif
 
 ifeq ($(ENABLE_CLANG),0)
-	CFLAGS += -Os -Wall -Wno-error -mcpu=cortex-m0 -fno-builtin -fshort-enums -fno-delete-null-pointer-checks -std=c2x -MMD -w
+	CFLAGS += -Os -Wall -Wno-error -mcpu=cortex-m0 -fno-builtin -fshort-enums -fno-delete-null-pointer-checks -std=c2x -MMD -w -fno-align-functions -fno-align-jumps -fno-align-loops -fno-align-labels
 	#CFLAGS += -Os -Wall -Werror -mcpu=cortex-m0 -fno-builtin -fshort-enums -fno-delete-null-pointer-checks -std=c11 -MMD
 	#CFLAGS += -Os -Wall -Werror -mcpu=cortex-m0 -fno-builtin -fshort-enums -fno-delete-null-pointer-checks -std=c99 -MMD
 	#CFLAGS += -Os -Wall -Werror -mcpu=cortex-m0 -fno-builtin -fshort-enums -fno-delete-null-pointer-checks -std=gnu99 -MMD
@@ -551,6 +551,9 @@ endif
 ifeq ($(ENABLE_BYP_RAW_DEMODULATORS),1)
 	CFLAGS  += -DENABLE_BYP_RAW_DEMODULATORS
 endif
+ifeq ($(ENABLE_BLMIN_TMP_OFF),1)
+	CFLAGS  += -DENABLE_BLMIN_TMP_OFF
+endif
 
 ifeq ($(ENABLE_SCAN_RANGES),1)
 	CFLAGS  += -DENABLE_SCAN_RANGES
@@ -646,12 +649,12 @@ flash:
 version.o: .FORCE
 
 $(TARGET): $(OBJS)
-	@$(LD) $(LDFLAGS) $^ -o $@ $(LIBS)
+	$(LD) $(LDFLAGS) $^ -o $@ $(LIBS)
 
 bsp/dp32g030/%.h: hardware/dp32g030/%.def
 
 %.o: %.c | $(BSP_HEADERS)
-	@$(CC) $(CFLAGS) $(INC) -c $< -o $@
+	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
 %.o: %.S
 	@$(AS) $(ASFLAGS) $< -o $@
@@ -691,4 +694,5 @@ else # 类 Unix 系统（Linux, macOS, 等）
 	chmod +x del_linux.sh
 	sh ./del_linux.sh
 endif
-
+test_print:
+	@echo "ENABLE_SCAN_RANGES is $(ENABLE_SCAN_RANGES)"

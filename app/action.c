@@ -551,7 +551,7 @@ void ACTION_BlminTmpOff(void)
 {
     if(++gEeprom.BACKLIGHT_MIN_STAT == BLMIN_STAT_UNKNOWN) {
         gEeprom.BACKLIGHT_MIN_STAT = BLMIN_STAT_ON;
-        BACKLIGHT_SetBrightness(gEeprom.BACKLIGHT_MIN);
+        BACKLIGHT_SetBrightness(gEeprom.BACKLIGHT_MAX);
     } else {
         BACKLIGHT_SetBrightness(0);
     }

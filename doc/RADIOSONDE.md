@@ -9,6 +9,13 @@ To successfully decode the RS41's 4800 baud GFSK telemetry, the MCU needs access
 **Required Mod:**
 You must connect **Pin 8 (EARO)** of the BK4819 to **Pin 9 (PA8)** of the DP32G030 MCU via a **DC-blocking capacitor** (e.g., 100nF). This bypasses the internal audio filters and provides a clean waveform to the MCU's ADC for processing.
 
+**PA8 DC Bias Configuration:**
+Since the signal is AC-coupled via a capacitor, the MCU must establish a stable DC bias on PA8 so that the ADC can read the AC waveform without clipping. 
+* The UV-K5 motherboard has a physical **10kΩ external pull-up resistor** on the UART RX line (connected to PA8).
+* The firmware configures the MCU's **internal weak pull-down resistor (~41.5kΩ)** while keeping the internal pull-up disabled.
+* This forms a voltage divider, creating an internal DC bias of **~2.66V (ADC offset ~3306)**. This offset provides enough headroom for the software AGC (which targets 600–1000 P2P) to decode the signal without positive or negative clipping.
+
+
 ![Audio Connection Hardware Mod](../images/audio-connection.jpg)
 ![image](../images/IMG_20260519_073139.jpg)
 ## Usage Instructions

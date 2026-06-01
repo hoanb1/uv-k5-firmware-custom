@@ -77,7 +77,9 @@ const t_menu_item MenuList[] =
                 {/*"ChDisp",*/ VOICE_ID_INVALID, MENU_MDF, "ChDisp"}, // was "MDF"
                 {/*"BackLt",*/ VOICE_ID_INVALID, MENU_ABR, "BackLt"}, // was "ABR"
                 {/*"BLMax",*/  VOICE_ID_INVALID, MENU_ABR_MAX, "Light"},
+#ifdef ENABLE_MDC1200
                 {/*"MDCID",*/  VOICE_ID_INVALID, MENU_MDC_ID, "MDC ID"},
+#endif
 
                 {/*"Roger",*/  VOICE_ID_INVALID, MENU_ROGER, "Roger"},
 
@@ -511,17 +513,7 @@ void UI_DisplayMenu(void) {
 
     if (gIsInSubMenu)
         memmove(gFrameBuffer[2] + 41, BITMAP_VFO_Default, sizeof(BITMAP_VFO_Default));
-#ifndef ENABLE_MDC1200
-    uint8_t add = 1;
-
-    if (gMenuCursor + 1 >= 26)
-        add = 0;
-
-    sprintf(String, "%2u/%u", add + gMenuCursor, gMenuListCount - 1);
-
-#else
     sprintf(String, "%2u/%u", 1 + gMenuCursor, gMenuListCount);
-#endif
 
     UI_PrintStringSmall(String, 2, 0, 6);
 

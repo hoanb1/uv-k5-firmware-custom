@@ -28,7 +28,7 @@ typedef struct {
 
     uint16_t last_rssi;        // RSSI of current channel
     uint16_t last_adc_p2p;     // ADC peak-to-peak amplitude
-    bool     signal_found;     // signal detected on current freq
+    bool     adc_clipped;      // ADC clipping detected
     bool     exit_requested;   // user wants to exit
     uint16_t timeout_frames;   // frames without decode before timeout
     uint16_t last_adc_raw;     // raw ADC sample for debug
@@ -36,12 +36,12 @@ typedef struct {
     uint16_t last_amplitude;   // Peak amplitude after DC removal
 
     uint8_t  step_idx;         // Index into SONDE_STEPS
-    uint8_t  agc_counter;
     uint16_t p2p_avg;          // Filtered P2P for AGC
-    uint8_t  history[42];      // Decoding history symbols
+    uint8_t  history[8];       // Decoding history symbols
     uint8_t  history_ptr;      // Pointer for history buffer
     char     pending_history;  // Latched symbol for the 1s cycle
     uint32_t history_sample_acc;
+    bool     hpf_compensation;
 } SondeApp_t;
 
 extern SondeApp_t gSondeApp;

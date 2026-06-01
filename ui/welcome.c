@@ -45,6 +45,24 @@
 void UI_DisplayWelcome(void) {
     memset(gStatusLine, 0, sizeof(gStatusLine));
     UI_DisplayClear();
+
+    char WelcomeString0[16] = {0};
+    char WelcomeString1[16] = {0};
+
+    EEPROM_ReadBuffer(0x0EB0, WelcomeString0, 16);
+    EEPROM_ReadBuffer(0x0EC0, WelcomeString1, 16);
+
+    UI_PrintStringSmall(WelcomeString0, 0, 127, 0);
+    UI_PrintStringSmall(WelcomeString1, 0, 127, 2);
+
+    sprintf(WelcomeString1, "%u.%02uV %u%%",
+            gBatteryVoltageAverage / 100,
+            gBatteryVoltageAverage % 100,
+            BATTERY_VoltsToPercent(gBatteryVoltageAverage));
+    UI_PrintStringSmall(WelcomeString1, 0, 127, 4);
+
+    UI_PrintStringSmall(Version, 0, 127, 6);
+
     ST7565_BlitStatusLine();
     ST7565_BlitFullScreen();
     BACKLIGHT_TurnOn();
