@@ -273,11 +273,13 @@ static void Sonde_Render(void)
     const char *step_str = (gSondeApp.step_idx == 0) ? "1M" : 
                            (gSondeApp.step_idx == 1) ? "100k" :
                            (gSondeApp.step_idx == 2) ? "10k" : "1k";
-    sprintf(fstr, "FREQ:%3u.%03u %s %s", 
+    const char *lpf_names[] = {"WID", "MID", "NAR"};
+    sprintf(fstr, "FREQ:%3u.%03u %s %s %s", 
             gSondeApp.frequency / 100000, 
             (gSondeApp.frequency % 100000) / 100, 
             step_str,
-            gSondeApp.hpf_compensation ? "INT" : "RAW");
+            gSondeApp.hpf_compensation ? "INT" : "RAW",
+            lpf_names[gSondeApp.lpf_mode % 3]);
     GUI_DisplaySmallest(fstr, 0, 0, false, true);
 
     Sonde_DrawStatusBar();
@@ -294,6 +296,24 @@ static void Sonde_Render(void)
 
     ST7565_BlitStatusLine();
     ST7565_BlitFullScreen();
+}
+static void Sonde_ApplyLPFMode(uint8_t mode)
+{
+    uint16_t lpf_val = 4u; // Default: 4.5kHz (WID)
+    if (mode == 1) {
+        lpf_val = 0u; // 3.0kHz (MID)
+    } else if (mode == 2) {
+        lpf_val = 1u; // 2.5kHz (NAR)
+    }
+
+    BK4819_WriteRegister(0x43, 
+        (7u << 12) |  // RF filter bandwidth = 4.5kHz * 2
+        (7u << 9)  |  // RF filter bandwidth weak = 4.5kHz * 2
+        (lpf_val << 6) |  // AFTxLPF2
+        (2u << 4)  |  // 25k BW mode
+        (1u << 3)  |  // fixed
+        (0u << 2)  |  // Normal gain (was +6dB, caused ADC clipping)
+        (0u << 0));   // reserved
 }
 
 // ============================================================
@@ -318,22 +338,8 @@ static void Sonde_SetupReceiver(uint32_t freq)
     // 12.5kHz or 25kHz filter is required (25kHz recommended for stability without AFC)
     BK4819_SetFilterBandwidth(BK4819_FILTER_BW_WIDE, true);
 
-    // Override REG_43 for maximum audio bandwidth for RS41 4800-baud GFSK:
-    // <14:12>=7 RF BW = 4.5kHz * 2 (bit<5>=1) = 9kHz  
-    // <11:9> =7 RF BW weak = 4.5kHz * 2 = 9kHz
-    // <8:6>  =4 AFTxLPF2 = 4.5kHz (widest available)
-    // <5:4>  =2 BW Mode = 25k/20k
-    // <3>    =1 (fixed)
-    // <2>    =0 Normal gain after FM demod (no clipping)
-    // 0 111 111 100 10 1 0 00 = 0x7F28
-    BK4819_WriteRegister(0x43, 
-        (7u << 12) |  // RF filter bandwidth = 4.5kHz * 2
-        (7u << 9)  |  // RF filter bandwidth weak = 4.5kHz * 2
-        (4u << 6)  |  // AFTxLPF2 = 4.5kHz (widest available)
-        (2u << 4)  |  // 25k BW mode
-        (1u << 3)  |  // fixed
-        (0u << 2)  |  // Normal gain (was +6dB, caused ADC clipping)
-        (0u << 0));   // reserved
+    // Apply current LPF filter bandwidth mode (WID/MID/NAR)
+    Sonde_ApplyLPFMode(gSondeApp.lpf_mode);
 
     // (Removed GPIO0 override so it correctly works as RX_ENABLE)
 
@@ -487,8 +493,12 @@ static bool Sonde_HandleKeys(void)
             break;
 
         case KEY_SIDE1:
-        case KEY_SIDE2:
             gSondeApp.hpf_compensation = !gSondeApp.hpf_compensation;
+            break;
+
+        case KEY_SIDE2:
+            gSondeApp.lpf_mode = (gSondeApp.lpf_mode + 1) % 3;
+            Sonde_ApplyLPFMode(gSondeApp.lpf_mode);
             break;
 
         default:

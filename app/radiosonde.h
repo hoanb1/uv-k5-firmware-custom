@@ -42,6 +42,7 @@ typedef struct {
     char     pending_history;  // Latched symbol for the 1s cycle
     uint32_t history_sample_acc;
     bool     hpf_compensation;
+    uint8_t  lpf_mode;         // 0: 4.5kHz (WID), 1: 3.0kHz (MID), 2: 2.5kHz (NAR)
 } SondeApp_t;
 
 extern SondeApp_t gSondeApp;
